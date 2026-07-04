@@ -1,0 +1,27 @@
+# Render blueprint — one-click deploy for the AuditHub API.
+# Web (Next.js) goes to Vercel separately; see DEPLOY.md.
+services:
+  - type: web
+    name: audithub-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: DATABASE_URL
+        sync: false          # paste your Neon (or Render Postgres) URL
+      - key: JWT_ACCESS_SECRET
+        generateValue: true  # Render generates a strong random value
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_TTL
+        value: 15m
+      - key: JWT_REFRESH_TTL
+        value: 7d
+      - key: CORS_ORIGIN
+        sync: false          # your Vercel URL(s), comma-separated

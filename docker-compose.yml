@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: audithub-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: audithub
+      POSTGRES_PASSWORD: audithub
+      POSTGRES_DB: audithub
+    ports:
+      - "5433:5432"
+    volumes:
+      - audithub-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U audithub -d audithub"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  audithub-pg-data:

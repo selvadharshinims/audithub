@@ -1,0 +1,24 @@
+{
+  "name": "audithub",
+  "private": true,
+  "version": "1.0.0",
+  "description": "AuditHub - Auditor Practice Management System",
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "web": "pnpm --filter @audithub/web",
+    "api": "pnpm --filter @audithub/api"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

@@ -1,0 +1,24 @@
+node_modules/
+.pnpm-store/
+dist/
+build/
+.next/
+out/
+coverage/
+
+.env
+.env.local
+.env.*.local
+
+*.log
+.DS_Store
+.vscode/
+.idea/
+
+apps/api/prisma/migrations/dev.db*
+apps/api/uploads/
+uploads/
+
+# Ephemeral test artifacts
+.test-resp.json
+.test-status

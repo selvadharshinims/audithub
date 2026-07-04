@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 30 15% 99%;
+    --foreground: 226 30% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 226 30% 10%;
+
+    --primary: 226 70% 40%;
+    --primary-foreground: 30 15% 99%;
+
+    --accent: 38 92% 48%;
+    --accent-foreground: 226 40% 10%;
+
+    --muted: 30 15% 96%;
+    --muted-foreground: 226 12% 42%;
+
+    --border: 220 15% 90%;
+    --input: 220 15% 90%;
+    --ring: 226 70% 40%;
+
+    --success: 145 63% 42%;
+    --warning: 38 92% 48%;
+    --destructive: 0 72% 51%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 226 32% 7%;
+    --foreground: 30 15% 96%;
+
+    --card: 226 30% 10%;
+    --card-foreground: 30 15% 96%;
+
+    --primary: 226 92% 70%;
+    --primary-foreground: 226 40% 8%;
+
+    --accent: 38 95% 60%;
+    --accent-foreground: 226 40% 8%;
+
+    --muted: 226 25% 14%;
+    --muted-foreground: 226 10% 65%;
+
+    --border: 226 20% 18%;
+    --input: 226 20% 18%;
+    --ring: 226 92% 70%;
+
+    --success: 145 63% 55%;
+    --warning: 38 95% 60%;
+    --destructive: 0 72% 60%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-variant-numeric: tabular-nums;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.015em;
+  }
+}
+
+@layer utilities {
+  .bg-hero {
+    background:
+      radial-gradient(60rem 30rem at 5% -10%, hsl(var(--primary) / 0.10), transparent 60%),
+      radial-gradient(50rem 30rem at 100% 110%, hsl(var(--accent) / 0.10), transparent 60%),
+      hsl(var(--background));
+  }
+
+  .card-premium {
+    background: hsl(var(--card));
+    box-shadow:
+      0 1px 0 0 hsl(var(--foreground) / 0.04),
+      0 1px 2px 0 hsl(var(--foreground) / 0.04),
+      0 0 0 1px hsl(var(--border));
+  }
+
+  .dark .card-premium {
+    box-shadow:
+      0 1px 0 0 hsl(var(--background) / 0.6) inset,
+      0 1px 2px 0 rgb(0 0 0 / 0.4),
+      0 0 0 1px hsl(var(--border));
+  }
+
+  .ring-brand {
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.18);
+  }
+
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted) / 0.6) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+}
