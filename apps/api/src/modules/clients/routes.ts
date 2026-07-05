@@ -53,7 +53,9 @@ clientsRouter.get("/:id/finance", async (req, res, next) => {
     if (!client) return res.status(404).json({ error: "Not found" });
 
     const invoices = await prisma.invoice.findMany({
-      where: { clientId: client.id },
+      // Billing view counts actual tax invoices, not quotations/estimates —
+      // consistent with the dashboard and reports aggregations.
+      where: { clientId: client.id, kind: "invoice" },
       include: { payments: true },
       orderBy: { issuedAt: "desc" },
     });

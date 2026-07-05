@@ -66,7 +66,11 @@ export async function buildReport(orgId: string, type: ReportType, range: Range)
   if (type === "revenue") {
     const invoices = await prisma.invoice.findMany({
       where: { client: { orgId }, kind: "invoice", issuedAt: { gte: range.from, lte: range.to } },
-      select: { total: true, status: true, issuedAt: true },
+      select: {
+        total: true,
+        issuedAt: true,
+        payments: { where: { status: "paid" }, select: { amount: true } },
+      },
     });
     const buckets = new Map<string, RevenueRow>();
     for (const inv of invoices) {
@@ -79,10 +83,11 @@ export async function buildReport(orgId: string, type: ReportType, range: Range)
         invoiceCount: 0,
       };
       const total = toNumber(inv.total);
+      const paid = inv.payments.reduce((s, p) => s + toNumber(p.amount), 0);
       bucket.billed += total;
       bucket.invoiceCount += 1;
-      if (inv.status === "paid") bucket.collected += total;
-      else bucket.outstanding += total;
+      bucket.collected += Math.min(paid, total);
+      bucket.outstanding += Math.max(0, total - paid);
       buckets.set(key, bucket);
     }
     const rows = [...buckets.values()];
@@ -106,7 +111,10 @@ export async function buildReport(orgId: string, type: ReportType, range: Range)
         status: { in: ["pending", "partial", "overdue"] },
         issuedAt: { gte: range.from, lte: range.to },
       },
-      include: { client: { select: { name: true } } },
+      include: {
+        client: { select: { name: true } },
+        payments: { where: { status: "paid" }, select: { amount: true } },
+      },
       orderBy: [{ dueDate: "asc" }, { issuedAt: "asc" }],
     });
     const rows: OutstandingRow[] = invoices.map((inv) => ({
@@ -114,7 +122,8 @@ export async function buildReport(orgId: string, type: ReportType, range: Range)
       clientName: inv.client.name,
       issuedAt: inv.issuedAt,
       dueDate: inv.dueDate,
-      total: toNumber(inv.total),
+      // Amount still owed = invoice total minus payments received.
+      total: Math.max(0, toNumber(inv.total) - inv.payments.reduce((s, p) => s + toNumber(p.amount), 0)),
       status: inv.status,
       daysOverdue: inv.dueDate ? Math.max(0, Math.floor((now.getTime() - inv.dueDate.getTime()) / DAY)) : 0,
     }));
@@ -155,7 +164,10 @@ export async function buildReport(orgId: string, type: ReportType, range: Range)
   if (type === "client-performance") {
     const invoices = await prisma.invoice.findMany({
       where: { client: { orgId }, kind: "invoice", issuedAt: { gte: range.from, lte: range.to } },
-      include: { client: { select: { id: true, name: true } } },
+      include: {
+        client: { select: { id: true, name: true } },
+        payments: { where: { status: "paid" }, select: { amount: true } },
+      },
     });
     const byClient = new Map<string, ClientPerformanceRow>();
     for (const inv of invoices) {
@@ -168,10 +180,11 @@ export async function buildReport(orgId: string, type: ReportType, range: Range)
         outstanding: 0,
       };
       const total = toNumber(inv.total);
+      const paid = inv.payments.reduce((s, p) => s + toNumber(p.amount), 0);
       bucket.invoices += 1;
       bucket.billed += total;
-      if (inv.status === "paid") bucket.collected += total;
-      else bucket.outstanding += total;
+      bucket.collected += Math.min(paid, total);
+      bucket.outstanding += Math.max(0, total - paid);
       byClient.set(key, bucket);
     }
     const rows = [...byClient.values()].sort((a, b) => b.billed - a.billed);

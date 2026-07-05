@@ -29,7 +29,7 @@ interface OrgSummary {
 async function buildOrgSummary(orgId: string, orgName: string, now: Date): Promise<OrgSummary> {
   const in7 = new Date(now.getTime() + 7 * DAY);
 
-  const [totalClients, openTasks, overdueInvoicesCount, outstandingAgg, deadlines, overdueRows] =
+  const [totalClients, openTasks, overdueInvoicesCount, openInvoices, deadlines, overdueRows] =
     await Promise.all([
       prisma.client.count({ where: { orgId } }),
       prisma.task.count({
@@ -39,9 +39,9 @@ async function buildOrgSummary(orgId: string, orgName: string, now: Date): Promi
         },
       }),
       prisma.invoice.count({ where: { client: { orgId }, kind: "invoice", status: "overdue" } }),
-      prisma.invoice.aggregate({
-        where: { client: { orgId }, kind: "invoice", status: { in: ["pending", "partial", "overdue"] } },
-        _sum: { total: true },
+      prisma.invoice.findMany({
+        where: { client: { orgId }, kind: "invoice" },
+        select: { total: true, payments: { where: { status: "paid" }, select: { amount: true } } },
       }),
       prisma.reminder.findMany({
         where: { active: true, client: { orgId }, dueDate: { gte: now, lte: in7 } },
@@ -63,7 +63,10 @@ async function buildOrgSummary(orgId: string, orgName: string, now: Date): Promi
     totalClients,
     openTasks,
     overdueInvoices: overdueInvoicesCount,
-    outstandingDues: Number(outstandingAgg._sum.total ?? 0),
+    outstandingDues: openInvoices.reduce((sum, inv) => {
+      const paid = inv.payments.reduce((a, p) => a + Number(p.amount), 0);
+      return sum + Math.max(0, Number(inv.total) - paid);
+    }, 0),
     upcomingDeadlines: deadlines.map((d) => ({
       title: d.title ?? `${d.type} filing`,
       clientName: d.client.name,

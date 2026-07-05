@@ -31,10 +31,11 @@ dashboardRouter.get("/", async (req, res, next) => {
       openTasks,
       overdueInvoicesCount,
       completedTasks30d,
-      outstandingAgg,
-      revenueRows,
+      openInvoices,
+      paymentsFY,
       taskStatusRows,
       invoicesForCharts,
+      paymentsForCharts,
       clientsForGrowth,
       upcomingReminders,
       recentActivity,
@@ -56,13 +57,21 @@ dashboardRouter.get("/", async (req, res, next) => {
           OR: [{ client: { orgId } }, { assignee: { orgId } }],
         },
       }),
-      prisma.invoice.aggregate({
-        where: { client: { orgId }, kind: "invoice", status: { in: ["pending", "partial", "overdue"] } },
-        _sum: { total: true },
+      // Outstanding = Σ (invoice total − payments received) over ALL tax invoices.
+      // Driven by actual payments, not the status flag, so it can't drift out of
+      // sync with the per-client Finance view.
+      prisma.invoice.findMany({
+        where: { client: { orgId }, kind: "invoice" },
+        select: { total: true, payments: { where: { status: "paid" }, select: { amount: true } } },
       }),
-      prisma.invoice.aggregate({
-        where: { client: { orgId }, kind: "invoice", status: "paid", issuedAt: { gte: fy.start, lte: fy.end } },
-        _sum: { total: true },
+      // Revenue collected this FY = actual payments received, not invoice totals.
+      prisma.payment.aggregate({
+        where: {
+          status: "paid",
+          paidAt: { gte: fy.start, lte: fy.end },
+          invoice: { client: { orgId }, kind: "invoice" },
+        },
+        _sum: { amount: true },
       }),
       prisma.task.groupBy({
         by: ["status"],
@@ -72,6 +81,15 @@ dashboardRouter.get("/", async (req, res, next) => {
       prisma.invoice.findMany({
         where: { client: { orgId }, kind: "invoice", issuedAt: { gte: twelveMonthsAgo } },
         select: { total: true, status: true, issuedAt: true },
+      }),
+      // Payments received in the last 12 months → the "collected" line on the chart.
+      prisma.payment.findMany({
+        where: {
+          status: "paid",
+          paidAt: { gte: twelveMonthsAgo },
+          invoice: { client: { orgId }, kind: "invoice" },
+        },
+        select: { amount: true, paidAt: true },
       }),
       prisma.client.findMany({
         where: { orgId, createdAt: { gte: twelveMonthsAgo } },
@@ -96,14 +114,13 @@ dashboardRouter.get("/", async (req, res, next) => {
     ]);
 
     const revenueByMonth = bucketByMonth(twelveMonthsAgo, now, (bucket) => {
-      let revenue = 0;
       let billed = 0;
       for (const inv of invoicesForCharts) {
-        const d = inv.issuedAt;
-        if (sameMonth(d, bucket.date)) {
-          billed += Number(inv.total);
-          if (inv.status === "paid") revenue += Number(inv.total);
-        }
+        if (sameMonth(inv.issuedAt, bucket.date)) billed += Number(inv.total);
+      }
+      let revenue = 0; // "collected" = payments actually received that month
+      for (const p of paymentsForCharts) {
+        if (p.paidAt && sameMonth(p.paidAt, bucket.date)) revenue += Number(p.amount);
       }
       return { label: bucket.label, revenue, billed };
     });
@@ -123,8 +140,11 @@ dashboardRouter.get("/", async (req, res, next) => {
         openTasks,
         overdueInvoices: overdueInvoicesCount,
         completedTasks30d,
-        outstandingDues: Number(outstandingAgg._sum.total ?? 0),
-        revenueFY: Number(revenueRows._sum.total ?? 0),
+        outstandingDues: openInvoices.reduce((sum, inv) => {
+          const paid = inv.payments.reduce((a, p) => a + Number(p.amount), 0);
+          return sum + Math.max(0, Number(inv.total) - paid);
+        }, 0),
+        revenueFY: Number(paymentsFY._sum.amount ?? 0),
       },
       revenueByMonth,
       clientsByMonth,
