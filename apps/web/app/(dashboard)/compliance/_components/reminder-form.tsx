@@ -93,7 +93,7 @@ export function ReminderForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <Label>
             Client<span className="ml-0.5 text-red-600">*</span>
@@ -119,7 +119,7 @@ export function ReminderForm({
           </Select>
         </div>
 
-        <div className="space-y-1 col-span-2">
+        <div className="space-y-1 sm:col-span-2">
           <Label>Title / period</Label>
           <Input
             value={values.title}
@@ -146,7 +146,7 @@ export function ReminderForm({
           </Select>
         </div>
 
-        <div className="space-y-1 col-span-2">
+        <div className="space-y-1 sm:col-span-2">
           <Label>Reminder offsets (days before)</Label>
           <Input
             value={values.offsets}
@@ -156,12 +156,12 @@ export function ReminderForm({
           <p className="text-xs text-muted-foreground">Comma-separated positive integers.</p>
         </div>
 
-        <div className="space-y-1 col-span-2">
+        <div className="space-y-1 sm:col-span-2">
           <Label>Notes</Label>
           <Textarea value={values.notes} onChange={(e) => set("notes", e.target.value)} rows={2} />
         </div>
 
-        <label className="flex items-center gap-2 text-sm col-span-2">
+        <label className="flex items-center gap-2 text-sm sm:col-span-2">
           <input
             type="checkbox"
             checked={values.active}
@@ -174,36 +174,45 @@ export function ReminderForm({
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <div className="flex items-center justify-between pt-2">
-        <div>
-          {onDelete && (
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={async () => {
-                if (confirm("Delete this reminder?")) await onDelete();
-              }}
-              disabled={busy}
-            >
-              Delete
-            </Button>
-          )}
-        </div>
-        <div className="flex gap-2">
-          {onSendNow && (
-            <Button type="button" variant="outline" onClick={() => onSendNow()} disabled={busy}>
-              Send test
-            </Button>
-          )}
-          {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel} disabled={busy}>
-              Cancel
-            </Button>
-          )}
-          <Button type="submit" disabled={busy}>
-            {busy ? "Saving…" : submitLabel}
+      <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-center">
+        {onDelete && (
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={async () => {
+              if (confirm("Delete this reminder?")) await onDelete();
+            }}
+            disabled={busy}
+            className="w-full sm:mr-auto sm:w-auto"
+          >
+            Delete
           </Button>
-        </div>
+        )}
+        {onSendNow && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onSendNow()}
+            disabled={busy}
+            className="w-full sm:w-auto"
+          >
+            Send test
+          </Button>
+        )}
+        {onCancel && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={busy}
+            className="w-full sm:w-auto"
+          >
+            Cancel
+          </Button>
+        )}
+        <Button type="submit" disabled={busy} className="w-full sm:w-auto">
+          {busy ? "Saving…" : submitLabel}
+        </Button>
       </div>
     </form>
   );

@@ -63,6 +63,7 @@ export function CompaniesSection({ clientId }: { clientId: string }) {
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="tap-target"
                     onClick={() => setMode({ kind: "edit", company: c })}
                     title="Edit"
                   >
@@ -71,6 +72,7 @@ export function CompaniesSection({ clientId }: { clientId: string }) {
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="tap-target"
                     onClick={() => handleDelete(c)}
                     disabled={del.isPending}
                     title="Delete"
@@ -174,7 +176,7 @@ function CompanyForm({
           placeholder="e.g. Acme Traders Pvt. Ltd."
         />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <Label>Business type</Label>
           <Input
@@ -193,11 +195,17 @@ function CompanyForm({
         </div>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
-      <div className="flex items-center justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={busy}>
+      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:items-center sm:justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={busy}
+          className="w-full sm:w-auto"
+        >
           Cancel
         </Button>
-        <Button type="submit" disabled={busy}>
+        <Button type="submit" disabled={busy} className="w-full sm:w-auto">
           {busy ? "Saving…" : submitLabel}
         </Button>
       </div>

@@ -8,6 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
+import {
+  Field,
+  MobileList,
+  TableScroll,
+} from "@/components/ui/responsive-table";
 import { Select } from "@/components/ui/select";
 import {
   useCreatePayment,
@@ -62,20 +67,20 @@ export default function PaymentsPage() {
 
   return (
     <section className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Payments</h1>
+          <h1 className="text-xl font-semibold sm:text-2xl">Payments</h1>
           <p className="text-sm text-muted-foreground">
             {data ? `${data.length} record${data.length === 1 ? "" : "s"}` : " "}
           </p>
         </div>
-        <Button onClick={() => setCreating(true)}>
+        <Button onClick={() => setCreating(true)} className="w-full md:w-auto">
           <Plus className="h-4 w-4" />
           Record payment
         </Button>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card className="p-4">
           <div className="text-xs uppercase text-muted-foreground">Collected</div>
           <div className="mt-1 text-xl font-semibold">{formatINR(totals.collected)}</div>
@@ -90,20 +95,20 @@ export default function PaymentsPage() {
         </Card>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative w-full sm:w-auto">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search invoice, client or reference…"
-            className="w-80 pl-8"
+            className="w-full pl-8 sm:w-80"
           />
         </div>
         <Select
           value={status}
           onChange={(e) => setStatus(e.target.value as typeof status)}
-          className="w-40"
+          className="w-full sm:w-40"
         >
           <option value="all">All statuses</option>
           {PAYMENT_STATUS.map((s) => (
@@ -115,7 +120,7 @@ export default function PaymentsPage() {
         <Select
           value={method}
           onChange={(e) => setMethod(e.target.value as typeof method)}
-          className="w-40"
+          className="w-full sm:w-40"
         >
           <option value="all">All methods</option>
           {PAYMENT_METHOD.map((m) => (
@@ -150,52 +155,102 @@ export default function PaymentsPage() {
           )}
         </Card>
       ) : (
-        <Card className="overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 font-medium">Paid on</th>
-                <th className="px-4 py-3 font-medium">Invoice</th>
-                <th className="px-4 py-3 font-medium">Client</th>
-                <th className="px-4 py-3 text-right font-medium">Amount</th>
-                <th className="px-4 py-3 font-medium">Method</th>
-                <th className="px-4 py-3 font-medium">Reference</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="w-16 px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((p) => (
-                <tr key={p.id} className="border-b last:border-b-0 hover:bg-muted/30">
-                  <td className="px-4 py-3">{formatDate(p.paidAt ?? p.createdAt)}</td>
-                  <td className="px-4 py-3">
-                    <Link href={`/invoices/${p.invoice.id}`} className="font-medium hover:underline">
+        <>
+          {/* DESKTOP TABLE (md+) */}
+          <TableScroll>
+            <table className="w-full min-w-[880px] text-sm">
+              <thead className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
+                <tr>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Paid on</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Invoice</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Client</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-right font-medium">Amount</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Method</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Reference</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Status</th>
+                  <th className="w-16 px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((p) => (
+                  <tr key={p.id} className="border-b last:border-b-0 hover:bg-muted/30">
+                    <td className="whitespace-nowrap px-4 py-3">{formatDate(p.paidAt ?? p.createdAt)}</td>
+                    <td className="px-4 py-3">
+                      <Link href={`/invoices/${p.invoice.id}`} className="font-medium hover:underline">
+                        {p.invoice.number}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3">{p.invoice.client.name}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right font-mono">{formatINR(p.amount)}</td>
+                    <td className="px-4 py-3 capitalize">{p.method}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{p.reference ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      <PaymentStatusBadge status={p.status} />
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="tap-target"
+                        onClick={() => handleDelete(p.id, p.invoice.number)}
+                        disabled={del.isPending}
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableScroll>
+
+          {/* MOBILE CARDS (below md) */}
+          <MobileList>
+            {filtered.map((p) => (
+              <Card key={p.id} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <Link
+                      href={`/invoices/${p.invoice.id}`}
+                      className="font-medium hover:underline"
+                    >
                       {p.invoice.number}
                     </Link>
-                  </td>
-                  <td className="px-4 py-3">{p.invoice.client.name}</td>
-                  <td className="px-4 py-3 text-right font-mono">{formatINR(p.amount)}</td>
-                  <td className="px-4 py-3 capitalize">{p.method}</td>
-                  <td className="px-4 py-3 font-mono text-xs">{p.reference ?? "—"}</td>
-                  <td className="px-4 py-3">
+                    <div className="truncate text-xs text-muted-foreground">
+                      {p.invoice.client.name}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
                     <PaymentStatusBadge status={p.status} />
-                  </td>
-                  <td className="px-4 py-3 text-right">
                     <Button
                       variant="ghost"
                       size="icon"
+                      className="tap-target"
                       onClick={() => handleDelete(p.id, p.invoice.number)}
                       disabled={del.isPending}
                       title="Delete"
                     >
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+                  </div>
+                </div>
+                <div className="mt-3 space-y-1 border-t pt-3">
+                  <Field label="Paid on">{formatDate(p.paidAt ?? p.createdAt)}</Field>
+                  <Field label="Amount">
+                    <span className="font-mono">{formatINR(p.amount)}</span>
+                  </Field>
+                  <Field label="Method">
+                    <span className="capitalize">{p.method}</span>
+                  </Field>
+                  <Field label="Reference">
+                    <span className="font-mono text-xs">{p.reference ?? "—"}</span>
+                  </Field>
+                </div>
+              </Card>
+            ))}
+          </MobileList>
+        </>
       )}
 
       <Modal open={creating} onClose={() => setCreating(false)} title="Record payment">

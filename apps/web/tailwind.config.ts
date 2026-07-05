@@ -42,10 +42,23 @@ const config: Config = {
       keyframes: {
         "fade-in":  { from: { opacity: "0" }, to: { opacity: "1" } },
         "slide-up": { from: { opacity: "0", transform: "translateY(6px)" }, to: { opacity: "1", transform: "translateY(0)" } },
+        "float": {
+          "0%, 100%": { transform: "translateY(0) rotate(var(--tw-rotate, 0))" },
+          "50%":      { transform: "translateY(-14px) rotate(var(--tw-rotate, 0))" },
+        },
+        "float-sm": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%":      { transform: "translateY(-8px)" },
+        },
+        "spin-slow": { to: { transform: "rotate(360deg)" } },
       },
       animation: {
         "fade-in":  "fade-in 0.15s ease-out",
         "slide-up": "slide-up 0.2s ease-out",
+        "float":       "float 6s ease-in-out infinite",
+        "float-slow":  "float 8s ease-in-out infinite",
+        "float-sm":    "float-sm 5s ease-in-out infinite",
+        "spin-slow":   "spin-slow 22s linear infinite",
       },
     },
   },

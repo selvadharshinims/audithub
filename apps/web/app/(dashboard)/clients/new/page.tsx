@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCreateClient } from "@/hooks/use-clients";
+import { isOffline } from "@/lib/offline";
 import { ClientForm } from "../_components/client-form";
 
 export default function NewClientPage() {
@@ -21,7 +22,7 @@ export default function NewClientPage() {
           <ArrowLeft className="h-4 w-4" />
           Back to clients
         </Link>
-        <h1 className="text-2xl font-semibold">New client</h1>
+        <h1 className="text-xl font-semibold sm:text-2xl">New client</h1>
         <p className="text-sm text-muted-foreground">Create a client record. You can add companies and documents afterwards.</p>
       </header>
 
@@ -32,7 +33,14 @@ export default function NewClientPage() {
             busy={create.isPending}
             onCancel={() => router.push("/clients")}
             onSubmit={async (input) => {
-              const created = await create.mutateAsync(input);
+              const p = create.mutateAsync(input);
+              if (isOffline()) {
+                // Queued offline — the new id isn't known yet, so go to the list.
+                p.catch(() => undefined);
+                router.push("/clients");
+                return;
+              }
+              const created = await p;
               router.push(`/clients/${created.id}`);
             }}
           />

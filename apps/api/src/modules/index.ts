@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { adminRouter } from "./admin/routes.js";
 import { authRouter } from "./auth/routes.js";
 import { clientsRouter } from "./clients/routes.js";
 import { clientCompaniesRouter, companiesRouter } from "./companies/routes.js";
@@ -18,6 +19,7 @@ import { usersRouter } from "./users/routes.js";
 export const apiRouter = Router();
 
 apiRouter.use("/auth", authRouter);
+apiRouter.use("/admin", adminRouter);
 apiRouter.use("/dashboard", dashboardRouter);
 apiRouter.use("/clients", clientsRouter);
 apiRouter.use("/clients", clientDocumentsRouter); // /clients/:id/documents

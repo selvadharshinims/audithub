@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
+import { Field } from "@/components/ui/responsive-table";
 import { formatDate } from "@/lib/format";
 import { useCreateUser, useUpdateUser, useUsers } from "@/hooks/use-users";
 import type { UserRow } from "@/types/user";
@@ -37,50 +38,95 @@ export function UsersSection({ canManage }: { canManage: boolean }) {
         ) : !data?.length ? (
           <p className="p-6 text-center text-sm text-muted-foreground">No users yet.</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium">Role</th>
-                <th className="px-4 py-3 font-medium">Last login</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                {canManage && <th className="w-16 px-4 py-3" />}
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* DESKTOP TABLE (md+) */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-[640px] text-sm">
+                <thead className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
+                  <tr>
+                    <th className="whitespace-nowrap px-4 py-3 font-medium">Name</th>
+                    <th className="whitespace-nowrap px-4 py-3 font-medium">Email</th>
+                    <th className="whitespace-nowrap px-4 py-3 font-medium">Role</th>
+                    <th className="whitespace-nowrap px-4 py-3 font-medium">Last login</th>
+                    <th className="whitespace-nowrap px-4 py-3 font-medium">Status</th>
+                    {canManage && <th className="w-16 px-4 py-3" />}
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.map((u) => (
+                    <tr key={u.id} className="border-b last:border-b-0">
+                      <td className="px-4 py-3">{u.name}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
+                      <td className="px-4 py-3">
+                        <span className="capitalize">{u.role?.name ?? "—"}</span>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {u.lastLoginAt ? formatDate(u.lastLoginAt) : "Never"}
+                      </td>
+                      <td className="px-4 py-3">
+                        {u.isActive ? (
+                          <Badge variant="success">Active</Badge>
+                        ) : (
+                          <Badge variant="muted">Deactivated</Badge>
+                        )}
+                      </td>
+                      {canManage && (
+                        <td className="px-4 py-3 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="tap-target"
+                            onClick={() => setMode({ kind: "edit", user: u })}
+                          >
+                            Edit
+                          </Button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* MOBILE CARDS (below md) */}
+            <div className="space-y-3 p-4 md:hidden">
               {data.map((u) => (
-                <tr key={u.id} className="border-b last:border-b-0">
-                  <td className="px-4 py-3">{u.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
-                  <td className="px-4 py-3">
-                    <span className="capitalize">{u.role?.name ?? "—"}</span>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {u.lastLoginAt ? formatDate(u.lastLoginAt) : "Never"}
-                  </td>
-                  <td className="px-4 py-3">
-                    {u.isActive ? (
-                      <Badge variant="success">Active</Badge>
-                    ) : (
-                      <Badge variant="muted">Deactivated</Badge>
-                    )}
-                  </td>
-                  {canManage && (
-                    <td className="px-4 py-3 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setMode({ kind: "edit", user: u })}
-                      >
-                        Edit
-                      </Button>
-                    </td>
-                  )}
-                </tr>
+                <div key={u.id} className="rounded-lg border p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate font-medium">{u.name}</div>
+                      <div className="truncate text-xs text-muted-foreground">{u.email}</div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {u.isActive ? (
+                        <Badge variant="success">Active</Badge>
+                      ) : (
+                        <Badge variant="muted">Deactivated</Badge>
+                      )}
+                      {canManage && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="tap-target"
+                          onClick={() => setMode({ kind: "edit", user: u })}
+                        >
+                          Edit
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-3 space-y-1 border-t pt-3">
+                    <Field label="Role">
+                      <span className="capitalize">{u.role?.name ?? "—"}</span>
+                    </Field>
+                    <Field label="Last login">
+                      {u.lastLoginAt ? formatDate(u.lastLoginAt) : "Never"}
+                    </Field>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </CardContent>
 

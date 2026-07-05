@@ -28,6 +28,7 @@ export interface InvoiceDetail extends InvoiceRow {
     gstin: string | null;
     pan: string | null;
     address: string | null;
+    email?: string | null;
   };
   payments: Array<{
     id: string;

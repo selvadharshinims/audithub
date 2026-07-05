@@ -59,7 +59,7 @@ export function TaskCard({ task, onClick, onDragStart, onDelete, dragging }: Tas
             e.stopPropagation();
             onDelete();
           }}
-          className="rounded p-1 opacity-0 transition group-hover:opacity-100 hover:bg-muted"
+          className="tap-target inline-flex items-center justify-center rounded p-1 opacity-0 transition group-hover:opacity-100 hover:bg-muted [@media(pointer:coarse)]:opacity-100"
           aria-label="Delete task"
         >
           <Trash2 className="h-3.5 w-3.5" />

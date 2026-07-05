@@ -26,7 +26,7 @@ const empty: FormState = {
   amount: "",
   method: "bank",
   status: "paid",
-  paidAt: today(),
+  paidAt: "",
   reference: "",
 };
 
@@ -37,6 +37,8 @@ export interface PaymentFormProps {
   onCancel?: () => void;
   busy?: boolean;
   lockInvoice?: boolean;
+  /** When set, the invoice dropdown is scoped to this client's invoices only. */
+  clientId?: string;
 }
 
 export function PaymentForm({
@@ -46,14 +48,22 @@ export function PaymentForm({
   onCancel,
   busy,
   lockInvoice,
+  clientId,
 }: PaymentFormProps) {
-  const [values, setValues] = useState<FormState>({ ...empty, ...initial });
+  // `paidAt` is computed at mount (not module-load) so a long-lived tab never
+  // defaults a payment to a stale/previous day.
+  const [values, setValues] = useState<FormState>(() => ({ ...empty, paidAt: today(), ...initial }));
   const [error, setError] = useState<string | null>(null);
   const invoices = useInvoices();
 
+  const invoiceOptions = useMemo(() => {
+    const all = invoices.data ?? [];
+    return clientId ? all.filter((i) => i.client.id === clientId) : all;
+  }, [invoices.data, clientId]);
+
   const selectedInvoice = useMemo(
-    () => invoices.data?.find((i) => i.id === values.invoiceId),
-    [invoices.data, values.invoiceId],
+    () => invoiceOptions.find((i) => i.id === values.invoiceId),
+    [invoiceOptions, values.invoiceId],
   );
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -97,10 +107,18 @@ export function PaymentForm({
           onChange={(e) => set("invoiceId", e.target.value)}
           disabled={lockInvoice}
         >
-          <option value="">{invoices.isLoading ? "Loading…" : "Select an invoice"}</option>
-          {invoices.data?.map((i) => (
+          <option value="">
+            {invoices.isLoading
+              ? "Loading…"
+              : invoiceOptions.length === 0
+                ? "No invoices for this client"
+                : "Select an invoice"}
+          </option>
+          {invoiceOptions.map((i) => (
             <option key={i.id} value={i.id}>
-              {i.number} · {i.client.name} · {formatINR(i.total)}
+              {clientId
+                ? `${i.number} · ${formatINR(i.total)} · ${i.status}`
+                : `${i.number} · ${i.client.name} · ${formatINR(i.total)}`}
             </option>
           ))}
         </Select>
@@ -113,7 +131,7 @@ export function PaymentForm({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <Label>
             Amount (₹)<span className="ml-0.5 text-red-600">*</span>
@@ -164,7 +182,7 @@ export function PaymentForm({
           <Input type="date" value={values.paidAt} onChange={(e) => set("paidAt", e.target.value)} />
         </div>
 
-        <div className="space-y-1 col-span-2">
+        <div className="space-y-1 sm:col-span-2">
           <Label>Reference</Label>
           <Input
             value={values.reference}
@@ -176,13 +194,19 @@ export function PaymentForm({
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <div className="flex items-center justify-end gap-2 pt-2">
+      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:items-center sm:justify-end">
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel} disabled={busy}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={busy}
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
         )}
-        <Button type="submit" disabled={busy}>
+        <Button type="submit" disabled={busy} className="w-full sm:w-auto">
           {busy ? "Saving…" : submitLabel}
         </Button>
       </div>

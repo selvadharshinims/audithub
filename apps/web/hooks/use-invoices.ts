@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { InvoiceCreateInput, InvoiceUpdateInput } from "@audithub/types";
-import { api } from "@/lib/api";
+import { api, authFetch } from "@/lib/api";
 import type { InvoiceDetail, InvoiceRow } from "@/types/invoice";
 
 const KEY = ["invoices"] as const;
@@ -26,7 +26,10 @@ export function useCreateInvoice() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: InvoiceCreateInput) => api.post<InvoiceRow>("/invoices", input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEY });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
   });
 }
 
@@ -37,6 +40,7 @@ export function useUpdateInvoice(id: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEY });
       qc.invalidateQueries({ queryKey: [...KEY, id] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -45,11 +49,12 @@ export function useDeleteInvoice() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete(`/invoices/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEY });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
   });
 }
-
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
 
 export function useSendInvoice(id: string) {
   const qc = useQueryClient();
@@ -65,10 +70,7 @@ export function useSendInvoice(id: string) {
 }
 
 export async function downloadInvoicePdf(invoiceId: string, filename: string): Promise<void> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("audithub.access") : null;
-  const res = await fetch(`${BASE}/invoices/${invoiceId}/pdf`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  });
+  const res = await authFetch(`/invoices/${invoiceId}/pdf`, { method: "GET" });
   if (!res.ok) throw new Error("PDF download failed");
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);

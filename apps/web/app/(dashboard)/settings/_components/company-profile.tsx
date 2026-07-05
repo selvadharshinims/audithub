@@ -58,7 +58,7 @@ export function CompanyProfileSection({ canEdit }: { canEdit: boolean }) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1">
               <Label>Firm name</Label>
               <Input
@@ -98,8 +98,8 @@ export function CompanyProfileSection({ canEdit }: { canEdit: boolean }) {
           {saved && <p className="text-sm text-emerald-600">Saved.</p>}
 
           {canEdit && (
-            <div className="flex justify-end">
-              <Button type="submit" disabled={update.isPending}>
+            <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:items-center sm:justify-end">
+              <Button type="submit" disabled={update.isPending} className="w-full sm:w-auto">
                 {update.isPending ? "Saving…" : "Save changes"}
               </Button>
             </div>

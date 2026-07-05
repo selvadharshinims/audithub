@@ -19,6 +19,7 @@ import {
 import { ApiError } from "@/lib/api";
 import { useCreatePayment } from "@/hooks/use-payments";
 import { formatDate, formatINR } from "@/lib/format";
+import { isOffline } from "@/lib/offline";
 import { PaymentStatusBadge } from "../_components/status-badge";
 import { PaymentForm } from "../../payments/_components/payment-form";
 
@@ -44,8 +45,19 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
 
   async function handleDelete() {
     if (!confirm(`Delete invoice ${data!.number}?`)) return;
-    await del.mutateAsync(id);
-    router.push("/invoices");
+    const p = del.mutateAsync(id);
+    if (isOffline()) {
+      // Deletion is queued; leave the page rather than hang on the paused write.
+      p.catch(() => undefined);
+      router.push("/invoices");
+      return;
+    }
+    try {
+      await p;
+      router.push("/invoices");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete invoice");
+    }
   }
 
   return (
@@ -58,10 +70,10 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
           <ArrowLeft className="h-4 w-4" />
           Back to invoices
         </Link>
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-semibold">{data.number}</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-semibold sm:text-2xl">{data.number}</h1>
               <PaymentStatusBadge status={data.status} />
             </div>
             <p className="text-sm text-muted-foreground">
@@ -74,14 +86,18 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
               {formatDate(data.issuedAt)}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Select
               value={data.status}
-              onChange={async (e) => {
-                await update.mutateAsync({ status: e.target.value as PaymentStatus });
+              onChange={(e) => {
+                update
+                  .mutateAsync({ status: e.target.value as PaymentStatus })
+                  .catch((err) =>
+                    alert(err instanceof Error ? err.message : "Failed to update status"),
+                  );
               }}
               disabled={update.isPending}
-              className="w-36"
+              className="w-full sm:w-36"
             >
               {PAYMENT_STATUS.map((s) => (
                 <option key={s} value={s}>
@@ -106,10 +122,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
               variant="outline"
               disabled={sendInvoice.isPending}
               onClick={async () => {
-                const to = prompt(
-                  "Send invoice PDF to:",
-                  (data as unknown as { client: { email?: string | null } }).client.email ?? "",
-                );
+                const to = prompt("Send invoice PDF to:", data.client.email ?? "");
                 if (to === null) return;
                 try {
                   const res = await sendInvoice.mutateAsync(to.trim() || undefined);
@@ -213,7 +226,13 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
             lockInvoice
             onCancel={() => setRecording(false)}
             onSubmit={async (input) => {
-              await createPayment.mutateAsync(input);
+              const p = createPayment.mutateAsync(input);
+              if (isOffline()) {
+                p.catch(() => undefined);
+                setRecording(false);
+                return;
+              }
+              await p;
               setRecording(false);
             }}
           />

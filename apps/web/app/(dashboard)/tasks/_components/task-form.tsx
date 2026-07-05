@@ -99,7 +99,7 @@ export function TaskForm({ initial, submitLabel, onSubmit, onCancel, busy }: Tas
         <Textarea value={values.description} onChange={(e) => set("description", e.target.value)} rows={3} />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <Label>Client</Label>
           <Select value={values.clientId} onChange={(e) => set("clientId", e.target.value)}>
@@ -166,13 +166,19 @@ export function TaskForm({ initial, submitLabel, onSubmit, onCancel, busy }: Tas
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <div className="flex items-center justify-end gap-2 pt-2">
+      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:items-center sm:justify-end">
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel} disabled={busy}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={busy}
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
         )}
-        <Button type="submit" disabled={busy}>
+        <Button type="submit" disabled={busy} className="w-full sm:w-auto">
           {busy ? "Saving…" : submitLabel}
         </Button>
       </div>

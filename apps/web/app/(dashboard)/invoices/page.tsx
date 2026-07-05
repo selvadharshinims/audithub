@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
+import { Field, MobileList, TableScroll } from "@/components/ui/responsive-table";
 import { PAYMENT_STATUS } from "@audithub/types";
 import { useDeleteInvoice, useInvoices } from "@/hooks/use-invoices";
 import { formatDate, formatINR } from "@/lib/format";
@@ -49,22 +50,45 @@ export default function InvoicesPage() {
 
   return (
     <section className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Invoices</h1>
+          <h1 className="text-xl font-semibold sm:text-2xl">Invoices</h1>
           <p className="text-sm text-muted-foreground">
             {data ? `${data.length} record${data.length === 1 ? "" : "s"}` : " "}
           </p>
         </div>
-        <Link href="/invoices/new">
-          <Button>
-            <Plus className="h-4 w-4" />
-            New invoice
-          </Button>
-        </Link>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:w-auto">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search number or client…"
+              className="w-full pl-8 md:w-72"
+            />
+          </div>
+          <Select
+            value={status}
+            onChange={(e) => setStatus(e.target.value as typeof status)}
+            className="w-full sm:w-40"
+          >
+            <option value="all">All statuses</option>
+            {PAYMENT_STATUS.map((s) => (
+              <option key={s} value={s}>
+                {s.charAt(0).toUpperCase() + s.slice(1)}
+              </option>
+            ))}
+          </Select>
+          <Link href="/invoices/new" className="w-full md:w-auto">
+            <Button className="w-full md:w-auto">
+              <Plus className="h-4 w-4" />
+              New invoice
+            </Button>
+          </Link>
+        </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card className="p-4">
           <div className="text-xs uppercase text-muted-foreground">Total billed</div>
           <div className="mt-1 text-xl font-semibold">{formatINR(totals.billed)}</div>
@@ -77,30 +101,6 @@ export default function InvoicesPage() {
           <div className="text-xs uppercase text-muted-foreground">Records</div>
           <div className="mt-1 text-xl font-semibold">{data?.length ?? "—"}</div>
         </Card>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search number or client…"
-            className="w-72 pl-8"
-          />
-        </div>
-        <Select
-          value={status}
-          onChange={(e) => setStatus(e.target.value as typeof status)}
-          className="w-40"
-        >
-          <option value="all">All statuses</option>
-          {PAYMENT_STATUS.map((s) => (
-            <option key={s} value={s}>
-              {s.charAt(0).toUpperCase() + s.slice(1)}
-            </option>
-          ))}
-        </Select>
       </div>
 
       {isError && (
@@ -129,52 +129,89 @@ export default function InvoicesPage() {
           )}
         </Card>
       ) : (
-        <Card className="overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 font-medium">Number</th>
-                <th className="px-4 py-3 font-medium">Client</th>
-                <th className="px-4 py-3 font-medium">Kind</th>
-                <th className="px-4 py-3 font-medium">Issued</th>
-                <th className="px-4 py-3 font-medium">Due</th>
-                <th className="px-4 py-3 text-right font-medium">Total</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="w-16 px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((i) => (
-                <tr key={i.id} className="border-b last:border-b-0 hover:bg-muted/30">
-                  <td className="px-4 py-3">
+        <>
+          <TableScroll>
+            <table className="w-full min-w-[880px] text-sm">
+              <thead className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
+                <tr>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Number</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Client</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Kind</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Issued</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Due</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-right font-medium">Total</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Status</th>
+                  <th className="w-16 px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((i) => (
+                  <tr key={i.id} className="border-b last:border-b-0 hover:bg-muted/30">
+                    <td className="px-4 py-3">
+                      <Link href={`/invoices/${i.id}`} className="font-medium hover:underline">
+                        {i.number}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3">{i.client.name}</td>
+                    <td className="px-4 py-3 capitalize">{i.kind}</td>
+                    <td className="px-4 py-3">{formatDate(i.issuedAt)}</td>
+                    <td className="px-4 py-3">{formatDate(i.dueDate)}</td>
+                    <td className="px-4 py-3 text-right font-mono">{formatINR(i.total)}</td>
+                    <td className="px-4 py-3">
+                      <PaymentStatusBadge status={i.status} />
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="tap-target"
+                        onClick={() => handleDelete(i.id, i.number)}
+                        disabled={del.isPending}
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableScroll>
+
+          <MobileList>
+            {filtered.map((i) => (
+              <Card key={i.id} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
                     <Link href={`/invoices/${i.id}`} className="font-medium hover:underline">
                       {i.number}
                     </Link>
-                  </td>
-                  <td className="px-4 py-3">{i.client.name}</td>
-                  <td className="px-4 py-3 capitalize">{i.kind}</td>
-                  <td className="px-4 py-3">{formatDate(i.issuedAt)}</td>
-                  <td className="px-4 py-3">{formatDate(i.dueDate)}</td>
-                  <td className="px-4 py-3 text-right font-mono">{formatINR(i.total)}</td>
-                  <td className="px-4 py-3">
+                    <div className="truncate text-xs text-muted-foreground">{i.client.name}</div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
                     <PaymentStatusBadge status={i.status} />
-                  </td>
-                  <td className="px-4 py-3 text-right">
                     <Button
                       variant="ghost"
                       size="icon"
+                      className="tap-target"
                       onClick={() => handleDelete(i.id, i.number)}
                       disabled={del.isPending}
                       title="Delete"
                     >
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+                  </div>
+                </div>
+                <div className="mt-3 space-y-1 border-t pt-3">
+                  <Field label="Kind"><span className="capitalize">{i.kind}</span></Field>
+                  <Field label="Issued">{formatDate(i.issuedAt)}</Field>
+                  <Field label="Due">{formatDate(i.dueDate)}</Field>
+                  <Field label="Total"><span className="font-mono">{formatINR(i.total)}</span></Field>
+                </div>
+              </Card>
+            ))}
+          </MobileList>
+        </>
       )}
     </section>
   );

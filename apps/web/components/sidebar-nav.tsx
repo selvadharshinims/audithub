@@ -8,14 +8,14 @@ import {
   Briefcase,
   CalendarClock,
   ClipboardList,
-  FileText,
   LayoutDashboard,
   type LucideIcon,
   Receipt,
   Settings,
+  ShieldCheck,
   Users,
-  Wallet,
 } from "lucide-react";
+import { useMe } from "@/hooks/use-me";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -48,8 +48,6 @@ const SECTIONS: NavSection[] = [
   {
     title: "Finance",
     items: [
-      { href: "/invoices", label: "Invoices", icon: FileText },
-      { href: "/payments", label: "Payments", icon: Wallet },
       { href: "/expenses", label: "Expenses", icon: Receipt },
       { href: "/reports", label: "Reports", icon: BarChart3 },
     ],
@@ -63,15 +61,23 @@ const SECTIONS: NavSection[] = [
   },
 ];
 
+const PLATFORM_SECTION: NavSection = {
+  title: "Platform",
+  items: [{ href: "/admin", label: "Admin control", icon: ShieldCheck }],
+};
+
 export function SidebarNav() {
   const pathname = usePathname();
+  const { data: me } = useMe();
+
+  const sections = me?.isPlatformAdmin ? [...SECTIONS, PLATFORM_SECTION] : SECTIONS;
 
   const isActive = (href: string) =>
     href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
 
   return (
     <nav className="flex flex-col gap-6 px-3 py-4">
-      {SECTIONS.map((section) => (
+      {sections.map((section) => (
         <div key={section.title} className="space-y-1">
           <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
             {section.title}
@@ -84,7 +90,7 @@ export function SidebarNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "tap-target group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   active
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground",

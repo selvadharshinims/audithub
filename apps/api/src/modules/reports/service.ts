@@ -65,7 +65,7 @@ export async function buildReport(orgId: string, type: ReportType, range: Range)
 
   if (type === "revenue") {
     const invoices = await prisma.invoice.findMany({
-      where: { client: { orgId }, issuedAt: { gte: range.from, lte: range.to } },
+      where: { client: { orgId }, kind: "invoice", issuedAt: { gte: range.from, lte: range.to } },
       select: { total: true, status: true, issuedAt: true },
     });
     const buckets = new Map<string, RevenueRow>();
@@ -102,6 +102,7 @@ export async function buildReport(orgId: string, type: ReportType, range: Range)
     const invoices = await prisma.invoice.findMany({
       where: {
         client: { orgId },
+        kind: "invoice",
         status: { in: ["pending", "partial", "overdue"] },
         issuedAt: { gte: range.from, lte: range.to },
       },
@@ -123,7 +124,7 @@ export async function buildReport(orgId: string, type: ReportType, range: Range)
 
   if (type === "gst") {
     const invoices = await prisma.invoice.findMany({
-      where: { client: { orgId }, issuedAt: { gte: range.from, lte: range.to } },
+      where: { client: { orgId }, kind: "invoice", issuedAt: { gte: range.from, lte: range.to } },
       select: { subtotal: true, cgst: true, sgst: true, igst: true, tax: true, issuedAt: true },
     });
     const buckets = new Map<string, GstRow>();
@@ -153,7 +154,7 @@ export async function buildReport(orgId: string, type: ReportType, range: Range)
 
   if (type === "client-performance") {
     const invoices = await prisma.invoice.findMany({
-      where: { client: { orgId }, issuedAt: { gte: range.from, lte: range.to } },
+      where: { client: { orgId }, kind: "invoice", issuedAt: { gte: range.from, lte: range.to } },
       include: { client: { select: { id: true, name: true } } },
     });
     const byClient = new Map<string, ClientPerformanceRow>();

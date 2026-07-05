@@ -23,18 +23,18 @@ const features = [
 export default function Home() {
   return (
     <main className="relative min-h-screen bg-hero">
-      <nav className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+      <nav className="relative z-10 mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-4 sm:px-6 sm:py-5">
         <BrandMark />
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <Link
             href="/login"
-            className="rounded-md px-4 py-2 text-sm font-medium text-foreground/80 hover:text-foreground"
+            className="rounded-md px-3 py-2 text-sm font-medium text-foreground/80 hover:text-foreground sm:px-4"
           >
             Sign in
           </Link>
           <Link
             href="/signup"
-            className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/85"
+            className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-3 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/85 sm:px-4"
           >
             Start free
             <ArrowRight className="h-3.5 w-3.5" />
@@ -42,36 +42,36 @@ export default function Home() {
         </div>
       </nav>
 
-      <section className="relative z-10 mx-auto max-w-6xl px-6 pb-24 pt-16 md:pt-24">
+      <section className="relative z-10 mx-auto max-w-6xl px-4 pb-16 pt-12 sm:px-6 sm:pb-24 sm:pt-16 md:pt-24">
         <div className="mx-auto max-w-3xl text-center">
           <div className="mx-auto inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs font-medium shadow-premium-sm">
             <Sparkles className="h-3 w-3 text-accent" />
             <span>Built for Indian CA practices</span>
           </div>
 
-          <h1 className="mt-6 text-balance text-5xl font-semibold leading-[1.05] tracking-tight md:text-6xl">
+          <h1 className="mt-6 text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl md:text-6xl">
             The operating system for
             <span className="ml-3 inline-block bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent">
               modern auditors.
             </span>
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-balance text-lg text-muted-foreground">
+          <p className="mx-auto mt-6 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg">
             Replace spreadsheets, notebooks, and reminder chats. AuditHub is one clean
             system for clients, statutory compliance, invoices, payments, tasks, and reports.
           </p>
 
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
             <Link
               href="/signup"
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-medium text-primary-foreground shadow-premium transition-transform hover:-translate-y-0.5"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-medium text-primary-foreground shadow-premium transition-transform hover:-translate-y-0.5"
             >
               Start your practice — free
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 rounded-md border bg-card px-5 py-3 text-sm font-medium shadow-premium-sm transition-colors hover:bg-muted"
+              className="inline-flex items-center justify-center gap-2 rounded-md border bg-card px-5 py-3 text-sm font-medium shadow-premium-sm transition-colors hover:bg-muted"
             >
               Sign in
             </Link>
@@ -81,7 +81,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mx-auto mt-12 grid max-w-5xl grid-cols-1 gap-3 sm:mt-16 sm:grid-cols-2 lg:grid-cols-3">
           {features.map(({ icon: Icon, title, desc }) => (
             <div
               key={title}
@@ -97,7 +97,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="relative z-10 mx-auto max-w-6xl border-t px-6 py-6 text-center text-xs text-muted-foreground">
+      <footer className="relative z-10 mx-auto max-w-6xl border-t px-4 py-6 text-center text-xs text-muted-foreground sm:px-6">
         AuditHub · Practice OS · v1.0
       </footer>
     </main>

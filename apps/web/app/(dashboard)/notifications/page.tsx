@@ -40,15 +40,20 @@ export default function NotificationsPage() {
 
   return (
     <section className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Notifications</h1>
+          <h1 className="text-xl font-semibold sm:text-2xl">Notifications</h1>
           <p className="text-sm text-muted-foreground">
             {unread.data?.count ?? 0} unread · {data?.length ?? 0} total
           </p>
         </div>
         {(unread.data?.count ?? 0) > 0 && (
-          <Button variant="outline" onClick={() => markAll.mutate()} disabled={markAll.isPending}>
+          <Button
+            variant="outline"
+            onClick={() => markAll.mutate()}
+            disabled={markAll.isPending}
+            className="w-full md:w-auto"
+          >
             <CheckCheck className="h-4 w-4" />
             Mark all read
           </Button>
@@ -89,7 +94,7 @@ export default function NotificationsPage() {
             <div
               key={n.id}
               className={cn(
-                "flex items-start justify-between gap-3 p-4",
+                "flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between",
                 !n.readAt && "bg-primary/[.03]",
               )}
             >
@@ -104,7 +109,7 @@ export default function NotificationsPage() {
                   <div className="text-sm font-medium">{n.title}</div>
                   {n.body && (
                     <div
-                      className="mt-1 text-xs text-muted-foreground"
+                      className="mt-1 break-words text-xs text-muted-foreground"
                       dangerouslySetInnerHTML={{ __html: n.body }}
                     />
                   )}
@@ -114,9 +119,14 @@ export default function NotificationsPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2 pl-5 sm:pl-0">
                 {!n.readAt && (
-                  <Button variant="ghost" size="sm" onClick={() => markRead.mutate(n.id)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="tap-target"
+                    onClick={() => markRead.mutate(n.id)}
+                  >
                     Mark read
                   </Button>
                 )}
@@ -124,7 +134,7 @@ export default function NotificationsPage() {
                   <Link
                     href={n.link}
                     onClick={() => !n.readAt && markRead.mutate(n.id)}
-                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    className="tap-target inline-flex items-center gap-1 text-xs text-primary hover:underline"
                   >
                     Open
                     <ExternalLink className="h-3 w-3" />

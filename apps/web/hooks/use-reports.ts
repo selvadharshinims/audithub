@@ -1,10 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api, authFetch } from "@/lib/api";
 import type { ReportPayload, ReportType } from "@/types/report";
-
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
 
 export function useReport(type: ReportType, range: { from: string; to: string }) {
   return useQuery({
@@ -21,11 +19,8 @@ export async function downloadReport(
   format: "xlsx" | "pdf",
   range: { from: string; to: string },
 ): Promise<void> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("audithub.access") : null;
-  const url = `${BASE}/reports/${type}/export?format=${format}&from=${encodeURIComponent(range.from)}&to=${encodeURIComponent(range.to)}`;
-  const res = await fetch(url, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  });
+  const path = `/reports/${type}/export?format=${format}&from=${encodeURIComponent(range.from)}&to=${encodeURIComponent(range.to)}`;
+  const res = await authFetch(path, { method: "GET" });
   if (!res.ok) throw new Error("Download failed");
   const blob = await res.blob();
   const objectUrl = URL.createObjectURL(blob);

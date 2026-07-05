@@ -1,4 +1,4 @@
-import type { ClientStatus } from "@audithub/types";
+import type { ClientStatus, InvoiceKind, PaymentStatus } from "@audithub/types";
 
 export interface ClientRecord {
   id: string;
@@ -32,4 +32,40 @@ export interface ClientDetail extends ClientRecord {
     size: number;
     createdAt: string;
   }>;
+}
+
+export interface ClientFinanceInvoice {
+  id: string;
+  number: string;
+  kind: InvoiceKind;
+  status: PaymentStatus;
+  total: string;
+  paid: string;
+  balance: string;
+  issuedAt: string;
+  dueDate: string | null;
+}
+
+export interface ClientFinancePayment {
+  id: string;
+  amount: string;
+  method: string;
+  status: PaymentStatus;
+  paidAt: string | null;
+  reference: string | null;
+  invoice: { id: string; number: string };
+}
+
+export interface ClientFinance {
+  summary: {
+    invoiceCount: number;
+    paymentCount: number;
+    totalBilled: string;
+    totalPaid: string;
+    totalOutstanding: string;
+    overdueCount: number;
+    overdueAmount: string;
+  };
+  invoices: ClientFinanceInvoice[];
+  payments: ClientFinancePayment[];
 }

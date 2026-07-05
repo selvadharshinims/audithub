@@ -1,13 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Eye, EyeOff, KeyRound, Mail } from "lucide-react";
-import { api } from "@/lib/api";
+import { ArrowRight, Eye, EyeOff, KeyRound, Mail, ShieldCheck } from "lucide-react";
+import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, api } from "@/lib/api";
+
+type LoginResult =
+  | { accessToken: string; refreshToken: string }
+  | { twoFactorRequired: true; challengeToken: string };
 
 export default function LoginPage() {
   const router = useRouter();
+  const qc = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -15,24 +21,117 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Two-factor step
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const [code, setCode] = useState("");
+  const [useBackup, setUseBackup] = useState(false);
+
+  function saveSession(res: { accessToken: string; refreshToken: string }) {
+    localStorage.setItem(ACCESS_TOKEN_KEY, res.accessToken);
+    localStorage.setItem(REFRESH_TOKEN_KEY, res.refreshToken);
+    // Drop any data cached (in memory + persisted) under a previous session so a
+    // new user never sees the previous user's clients/invoices.
+    qc.clear();
+    router.push("/dashboard");
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const res = await api.post<{ accessToken: string; refreshToken: string }>("/auth/login", {
-        email,
-        password,
-        remember,
-      });
-      localStorage.setItem("audithub.access", res.accessToken);
-      localStorage.setItem("audithub.refresh", res.refreshToken);
-      router.push("/dashboard");
+      const res = await api.post<LoginResult>("/auth/login", { email, password, remember });
+      if ("twoFactorRequired" in res) {
+        setChallengeToken(res.challengeToken);
+      } else {
+        saveSession(res);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
     }
+  }
+
+  async function onVerify(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await api.post<{ accessToken: string; refreshToken: string }>("/auth/2fa/verify", {
+        challengeToken,
+        code,
+      });
+      saveSession(res);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Verification failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (challengeToken) {
+    return (
+      <div className="animate-slide-up space-y-8">
+        <div className="space-y-2">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <ShieldCheck className="h-6 w-6" />
+          </div>
+          <h1 className="text-3xl font-semibold tracking-tight">Two-factor verification</h1>
+          <p className="text-sm text-muted-foreground">
+            {useBackup
+              ? "Enter one of your backup codes."
+              : "Enter the 6-digit code from your authenticator app."}
+          </p>
+        </div>
+        <form onSubmit={onVerify} className="space-y-5">
+          <div className="space-y-1.5">
+            <label htmlFor="code" className="text-sm font-medium">
+              {useBackup ? "Backup code" : "Authentication code"}
+            </label>
+            <input
+              id="code"
+              inputMode={useBackup ? "text" : "numeric"}
+              autoComplete="one-time-code"
+              autoFocus
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              required
+              placeholder={useBackup ? "e.g. A1B2C3D4" : "123456"}
+              className="h-12 w-full rounded-md border bg-background px-4 text-center text-lg tracking-[0.3em] shadow-premium-sm outline-none transition-shadow focus:ring-brand"
+            />
+          </div>
+          {error && (
+            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </div>
+          )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-medium text-primary-foreground shadow-premium transition-transform hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading ? "Verifying…" : "Verify & sign in"}
+          </button>
+          <div className="flex items-center justify-between text-sm">
+            <button
+              type="button"
+              onClick={() => { setUseBackup((v) => !v); setCode(""); setError(null); }}
+              className="text-primary hover:underline"
+            >
+              {useBackup ? "Use authenticator app" : "Use a backup code"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setChallengeToken(null); setCode(""); setError(null); }}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              ← Back
+            </button>
+          </div>
+        </form>
+      </div>
+    );
   }
 
   return (
@@ -116,15 +215,6 @@ export default function LoginPage() {
           {loading ? "Signing in…" : "Sign in"}
           {!loading && <ArrowRight className="h-4 w-4" />}
         </button>
-
-        <div className="rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
-          <div className="font-medium text-foreground">Demo account</div>
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 font-mono">
-            <span>admin@audithub.local</span>
-            <span className="text-muted-foreground/60">·</span>
-            <span>admin@1234</span>
-          </div>
-        </div>
 
         <p className="text-center text-sm text-muted-foreground">
           New to AuditHub?{" "}

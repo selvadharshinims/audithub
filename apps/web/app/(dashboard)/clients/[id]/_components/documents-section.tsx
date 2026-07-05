@@ -109,7 +109,7 @@ export function DocumentsSection({ clientId }: { clientId: string }) {
           </div>
           <div className="space-y-1">
             <Label>&nbsp;</Label>
-            <Button type="submit" disabled={upload.isPending || !file}>
+            <Button type="submit" disabled={upload.isPending || !file} className="w-full md:w-auto">
               <Upload className="h-4 w-4" />
               {upload.isPending ? "Uploading…" : "Upload"}
             </Button>
@@ -144,12 +144,19 @@ export function DocumentsSection({ clientId }: { clientId: string }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => handleDownload(doc)} title="Download">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="tap-target"
+                    onClick={() => handleDownload(doc)}
+                    title="Download"
+                  >
                     <Download className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="tap-target"
                     onClick={() => handleDelete(doc)}
                     disabled={del.isPending}
                     title="Delete"

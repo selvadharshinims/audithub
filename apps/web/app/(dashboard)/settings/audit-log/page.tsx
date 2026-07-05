@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { Field, MobileList, TableScroll } from "@/components/ui/responsive-table";
 import { useActivityLogs } from "@/hooks/use-activity-logs";
 import { useMe } from "@/hooks/use-me";
 import { useUsers } from "@/hooks/use-users";
@@ -95,7 +96,7 @@ export default function AuditLogPage() {
           Back to settings
         </Link>
         <div>
-          <h1 className="text-2xl font-semibold">Audit log</h1>
+          <h1 className="text-xl font-semibold sm:text-2xl">Audit log</h1>
           <p className="text-sm text-muted-foreground">
             {data ? `${data.rows.length} entries` : " "} · Most recent first
           </p>
@@ -155,66 +156,132 @@ export default function AuditLogPage() {
           No activity found for the current filters.
         </Card>
       ) : (
-        <Card className="overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 font-medium">When</th>
-                <th className="px-4 py-3 font-medium">Actor</th>
-                <th className="px-4 py-3 font-medium">Action</th>
-                <th className="px-4 py-3 font-medium">Entity</th>
-                <th className="px-4 py-3 font-medium">Ref</th>
-                <th className="px-4 py-3 font-medium">Meta</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.rows.map((r) => {
-                const metaKeys = r.meta ? Object.keys(r.meta) : [];
-                const isExpanded = expanded === r.id;
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => setExpanded((cur) => (cur === r.id ? null : r.id))}
-                    className="cursor-pointer border-b align-top last:border-b-0 hover:bg-muted/30"
-                  >
-                    <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">
-                      {formatTimestamp(r.createdAt)}
-                    </td>
-                    <td className="px-4 py-3">
+        <>
+          {/* DESKTOP TABLE (md+) */}
+          <TableScroll>
+            <table className="w-full min-w-[720px] text-sm">
+              <thead className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
+                <tr>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">When</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Actor</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Action</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Entity</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Ref</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Meta</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.rows.map((r) => {
+                  const metaKeys = r.meta ? Object.keys(r.meta) : [];
+                  const isExpanded = expanded === r.id;
+                  return (
+                    <tr
+                      key={r.id}
+                      onClick={() => setExpanded((cur) => (cur === r.id ? null : r.id))}
+                      className="cursor-pointer border-b align-top last:border-b-0 hover:bg-muted/30"
+                    >
+                      <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">
+                        {formatTimestamp(r.createdAt)}
+                      </td>
+                      <td className="px-4 py-3">
+                        {r.actor ? (
+                          <div>
+                            <div className="font-medium">{r.actor.name}</div>
+                            <div className="text-xs text-muted-foreground">{r.actor.email}</div>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">System</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs">{r.action}</td>
+                      <td className="px-4 py-3">{r.entity}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                        {r.entityId ? r.entityId.slice(0, 8) : "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        {metaKeys.length === 0 ? (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        ) : isExpanded ? (
+                          <pre className="max-w-xs overflow-x-auto rounded bg-muted p-2 text-[11px]">
+                            {JSON.stringify(r.meta, null, 2)}
+                          </pre>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            {metaKeys.slice(0, 3).join(", ")}
+                            {metaKeys.length > 3 ? "…" : ""}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </TableScroll>
+
+          {/* MOBILE CARDS (below md) */}
+          <MobileList>
+            {data.rows.map((r) => {
+              const metaKeys = r.meta ? Object.keys(r.meta) : [];
+              const isExpanded = expanded === r.id;
+              return (
+                <Card
+                  key={r.id}
+                  onClick={() => setExpanded((cur) => (cur === r.id ? null : r.id))}
+                  className="cursor-pointer p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
                       {r.actor ? (
-                        <div>
-                          <div className="font-medium">{r.actor.name}</div>
-                          <div className="text-xs text-muted-foreground">{r.actor.email}</div>
-                        </div>
+                        <>
+                          <div className="truncate font-medium">{r.actor.name}</div>
+                          <div className="truncate text-xs text-muted-foreground">
+                            {r.actor.email}
+                          </div>
+                        </>
                       ) : (
                         <span className="text-muted-foreground">System</span>
                       )}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs">{r.action}</td>
-                    <td className="px-4 py-3">{r.entity}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                      {r.entityId ? r.entityId.slice(0, 8) : "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      {metaKeys.length === 0 ? (
+                    </div>
+                    <span className="shrink-0 text-right text-xs text-muted-foreground">
+                      {formatTimestamp(r.createdAt)}
+                    </span>
+                  </div>
+                  <div className="mt-3 space-y-1 border-t pt-3">
+                    <Field label="Action">
+                      <span className="font-mono text-xs">{r.action}</span>
+                    </Field>
+                    <Field label="Entity">{r.entity}</Field>
+                    <Field label="Ref">
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {r.entityId ? r.entityId.slice(0, 8) : "—"}
+                      </span>
+                    </Field>
+                    {metaKeys.length === 0 ? (
+                      <Field label="Meta">
                         <span className="text-xs text-muted-foreground">—</span>
-                      ) : isExpanded ? (
-                        <pre className="max-w-xs overflow-x-auto rounded bg-muted p-2 text-[11px]">
+                      </Field>
+                    ) : isExpanded ? (
+                      <div className="py-0.5">
+                        <div className="text-sm text-muted-foreground">Meta</div>
+                        <pre className="mt-1 overflow-x-auto rounded bg-muted p-2 text-[11px]">
                           {JSON.stringify(r.meta, null, 2)}
                         </pre>
-                      ) : (
+                      </div>
+                    ) : (
+                      <Field label="Meta">
                         <span className="text-xs text-muted-foreground">
                           {metaKeys.slice(0, 3).join(", ")}
                           {metaKeys.length > 3 ? "…" : ""}
                         </span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </Card>
+                      </Field>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
+          </MobileList>
+        </>
       )}
     </section>
   );

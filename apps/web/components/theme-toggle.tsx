@@ -32,7 +32,7 @@ export function ThemeToggle() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted"
+        className="tap-target inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted"
         aria-label="Toggle theme"
         title="Theme"
       >

@@ -47,7 +47,7 @@ dashboardRouter.get("/", async (req, res, next) => {
         },
       }),
       prisma.invoice.count({
-        where: { client: { orgId }, status: "overdue" },
+        where: { client: { orgId }, kind: "invoice", status: "overdue" },
       }),
       prisma.task.count({
         where: {
@@ -57,11 +57,11 @@ dashboardRouter.get("/", async (req, res, next) => {
         },
       }),
       prisma.invoice.aggregate({
-        where: { client: { orgId }, status: { in: ["pending", "partial", "overdue"] } },
+        where: { client: { orgId }, kind: "invoice", status: { in: ["pending", "partial", "overdue"] } },
         _sum: { total: true },
       }),
       prisma.invoice.aggregate({
-        where: { client: { orgId }, status: "paid", issuedAt: { gte: fy.start, lte: fy.end } },
+        where: { client: { orgId }, kind: "invoice", status: "paid", issuedAt: { gte: fy.start, lte: fy.end } },
         _sum: { total: true },
       }),
       prisma.task.groupBy({
@@ -70,7 +70,7 @@ dashboardRouter.get("/", async (req, res, next) => {
         _count: { _all: true },
       }),
       prisma.invoice.findMany({
-        where: { client: { orgId }, issuedAt: { gte: twelveMonthsAgo } },
+        where: { client: { orgId }, kind: "invoice", issuedAt: { gte: twelveMonthsAgo } },
         select: { total: true, status: true, issuedAt: true },
       }),
       prisma.client.findMany({

@@ -41,7 +41,7 @@ export function ChangePasswordSection() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="space-y-1">
               <Label>Current password</Label>
               <Input
@@ -71,8 +71,8 @@ export function ChangePasswordSection() {
           {error && <p className="text-sm text-red-600">{error}</p>}
           {ok && <p className="text-sm text-emerald-600">Password changed.</p>}
 
-          <div className="flex justify-end">
-            <Button type="submit" disabled={change.isPending}>
+          <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:items-center sm:justify-end">
+            <Button type="submit" disabled={change.isPending} className="w-full sm:w-auto">
               {change.isPending ? "Updating…" : "Update password"}
             </Button>
           </div>

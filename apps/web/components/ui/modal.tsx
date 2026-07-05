@@ -32,13 +32,13 @@ export function Modal({ open, onClose, title, description, children, className }
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 p-0 backdrop-blur-sm animate-fade-in sm:items-center sm:p-4"
       onClick={onClose}
       role="presentation"
     >
       <div
         className={cn(
-          "relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border bg-card p-6 shadow-premium-lg animate-slide-up",
+          "relative max-h-[92vh] w-full overflow-y-auto rounded-t-xl border bg-card p-6 shadow-premium-lg animate-slide-up sm:max-h-[90vh] sm:max-w-lg sm:rounded-xl",
           className,
         )}
         onClick={(e) => e.stopPropagation()}

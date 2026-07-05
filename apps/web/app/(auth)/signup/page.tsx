@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Building2, Eye, EyeOff, KeyRound, Mail, User } from "lucide-react";
+import { ArrowRight, Building2, Eye, EyeOff, KeyRound, Mail, MailCheck, User } from "lucide-react";
 import { api } from "@/lib/api";
 
 export default function SignupPage() {
-  const router = useRouter();
   const [orgName, setOrgName] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -15,6 +13,7 @@ export default function SignupPage() {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,20 +24,40 @@ export default function SignupPage() {
     }
     setLoading(true);
     try {
-      const res = await api.post<{ accessToken: string; refreshToken: string }>("/auth/register", {
-        orgName,
-        name,
-        email,
-        password,
-      });
-      localStorage.setItem("audithub.access", res.accessToken);
-      localStorage.setItem("audithub.refresh", res.refreshToken);
-      router.push("/dashboard");
+      // Registration creates a PENDING workspace — no auto-login. The account
+      // stays locked until a platform admin approves it.
+      await api.post<{ pending: boolean }>("/auth/register", { orgName, name, email, password });
+      setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Signup failed");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (submitted) {
+    return (
+      <div className="animate-slide-up space-y-6 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success/15 text-success">
+          <MailCheck className="h-7 w-7" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold tracking-tight">Request received</h1>
+          <p className="text-sm text-muted-foreground">
+            Thanks, {name || "there"}. Your workspace <span className="font-medium text-foreground">{orgName}</span> has
+            been created and is <span className="font-medium text-foreground">awaiting administrator approval</span>.
+            You&rsquo;ll be able to sign in with <span className="font-medium text-foreground">{email}</span> once an
+            administrator approves your account.
+          </p>
+        </div>
+        <Link
+          href="/login"
+          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border bg-card text-sm font-medium shadow-premium-sm transition-colors hover:bg-muted"
+        >
+          Back to sign in
+        </Link>
+      </div>
+    );
   }
 
   return (

@@ -77,7 +77,7 @@ export function ClientForm({ initial, submitLabel, onSubmit, onCancel, busy }: C
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Client name" error={fieldErrors.name} required>
           <Input
             value={values.name}
@@ -134,7 +134,7 @@ export function ClientForm({ initial, submitLabel, onSubmit, onCancel, busy }: C
           />
         </Field>
 
-        <Field label="Address" error={fieldErrors.address} className="md:col-span-2">
+        <Field label="Address" error={fieldErrors.address} className="sm:col-span-2">
           <Textarea
             value={values.address}
             onChange={(e) => set("address", e.target.value)}
@@ -143,7 +143,7 @@ export function ClientForm({ initial, submitLabel, onSubmit, onCancel, busy }: C
           />
         </Field>
 
-        <Field label="Notes" error={fieldErrors.notes} className="md:col-span-2">
+        <Field label="Notes" error={fieldErrors.notes} className="sm:col-span-2">
           <Textarea
             value={values.notes}
             onChange={(e) => set("notes", e.target.value)}
@@ -155,15 +155,21 @@ export function ClientForm({ initial, submitLabel, onSubmit, onCancel, busy }: C
 
       {formError && <p className="text-sm text-red-600">{formError}</p>}
 
-      <div className="flex items-center gap-2">
-        <Button type="submit" disabled={busy}>
-          {busy ? "Saving…" : submitLabel}
-        </Button>
+      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:items-center sm:justify-end">
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel} disabled={busy}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={busy}
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
         )}
+        <Button type="submit" disabled={busy} className="w-full sm:w-auto">
+          {busy ? "Saving…" : submitLabel}
+        </Button>
       </div>
     </form>
   );

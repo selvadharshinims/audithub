@@ -38,9 +38,9 @@ async function buildOrgSummary(orgId: string, orgName: string, now: Date): Promi
           OR: [{ client: { orgId } }, { assignee: { orgId } }],
         },
       }),
-      prisma.invoice.count({ where: { client: { orgId }, status: "overdue" } }),
+      prisma.invoice.count({ where: { client: { orgId }, kind: "invoice", status: "overdue" } }),
       prisma.invoice.aggregate({
-        where: { client: { orgId }, status: { in: ["pending", "partial", "overdue"] } },
+        where: { client: { orgId }, kind: "invoice", status: { in: ["pending", "partial", "overdue"] } },
         _sum: { total: true },
       }),
       prisma.reminder.findMany({
@@ -50,7 +50,7 @@ async function buildOrgSummary(orgId: string, orgName: string, now: Date): Promi
         take: 8,
       }),
       prisma.invoice.findMany({
-        where: { client: { orgId }, status: "overdue" },
+        where: { client: { orgId }, kind: "invoice", status: "overdue" },
         include: { client: { select: { name: true } } },
         orderBy: { dueDate: "asc" },
         take: 8,

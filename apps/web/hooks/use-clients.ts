@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ClientCreateInput, ClientUpdateInput } from "@audithub/types";
 import { api } from "@/lib/api";
-import type { ClientDetail, ClientRecord } from "@/types/client";
+import type { ClientDetail, ClientFinance, ClientRecord } from "@/types/client";
 
 const KEY = ["clients"] as const;
 
@@ -18,6 +18,14 @@ export function useClient(id: string | undefined) {
   return useQuery({
     queryKey: [...KEY, id],
     queryFn: () => api.get<ClientDetail>(`/clients/${id}`),
+    enabled: Boolean(id),
+  });
+}
+
+export function useClientFinance(id: string | undefined) {
+  return useQuery({
+    queryKey: [...KEY, id, "finance"],
+    queryFn: () => api.get<ClientFinance>(`/clients/${id}/finance`),
     enabled: Boolean(id),
   });
 }

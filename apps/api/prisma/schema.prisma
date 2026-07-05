@@ -97,6 +97,20 @@ model User {
   email        String   @unique
   passwordHash String
   isActive     Boolean  @default(true)
+  // Platform-level super admin (info@digitalvetri.com) — sees/approves every
+  // workspace. Distinct from the per-workspace super_admin role.
+  isPlatformAdmin Boolean @default(false)
+  // Null until a platform admin approves the account. Lets us tell a never-yet
+  // -approved "pending" user apart from an approved-then-"suspended" one.
+  approvedAt   DateTime?
+  // Password reset — hashed single-use token + expiry (raw token only ever emailed).
+  resetTokenHash     String?
+  resetTokenExpiry   DateTime?
+  // Two-factor auth (TOTP). Secret is stored once setup begins; `enabled` flips
+  // true only after the first code is verified. Backup codes are stored hashed.
+  twoFactorEnabled   Boolean  @default(false)
+  twoFactorSecret    String?
+  twoFactorBackupCodes String[] @default([])
   lastLoginAt  DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

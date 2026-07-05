@@ -12,7 +12,7 @@ import {
 
 export function ClientsChart({ data }: { data: Array<{ label: string; total: number }> }) {
   return (
-    <div className="h-64 w-full">
+    <div className="h-56 w-full sm:h-64 lg:h-72">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
           <defs>

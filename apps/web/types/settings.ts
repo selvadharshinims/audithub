@@ -3,6 +3,9 @@ export interface Me {
   name: string;
   email: string;
   isActive: boolean;
+  isPlatformAdmin: boolean;
+  approvedAt: string | null;
+  twoFactorEnabled: boolean;
   role: { id: string; name: string };
   org: { id: string; name: string };
 }

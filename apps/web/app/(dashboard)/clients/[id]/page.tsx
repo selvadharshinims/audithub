@@ -7,10 +7,12 @@ import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useClient, useDeleteClient, useUpdateClient } from "@/hooks/use-clients";
+import { isOffline } from "@/lib/offline";
 import { ClientForm } from "../_components/client-form";
 import { ClientStatusBadge } from "../_components/status-badge";
 import { CompaniesSection } from "./_components/companies-section";
 import { DocumentsSection } from "./_components/documents-section";
+import { FinanceSection } from "./_components/finance-section";
 
 export default function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -34,8 +36,18 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 
   async function handleDelete() {
     if (!confirm(`Delete "${data!.name}"? This cannot be undone.`)) return;
-    await del.mutateAsync(id);
-    router.push("/clients");
+    const p = del.mutateAsync(id);
+    if (isOffline()) {
+      p.catch(() => undefined);
+      router.push("/clients");
+      return;
+    }
+    try {
+      await p;
+      router.push("/clients");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete client");
+    }
   }
 
   const rows: Array<[string, string | null]> = [
@@ -57,10 +69,10 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
           <ArrowLeft className="h-4 w-4" />
           Back to clients
         </Link>
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-semibold">{data.name}</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-semibold sm:text-2xl">{data.name}</h1>
               <ClientStatusBadge status={data.status} />
             </div>
             <p className="text-sm text-muted-foreground">
@@ -69,11 +81,16 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
           </div>
           {!editing && (
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => setEditing(true)}>
+              <Button variant="outline" onClick={() => setEditing(true)} className="flex-1 sm:flex-none">
                 <Pencil className="h-4 w-4" />
                 Edit
               </Button>
-              <Button variant="destructive" onClick={handleDelete} disabled={del.isPending}>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={del.isPending}
+                className="flex-1 sm:flex-none"
+              >
                 <Trash2 className="h-4 w-4" />
                 Delete
               </Button>
@@ -101,7 +118,13 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
               }}
               onCancel={() => setEditing(false)}
               onSubmit={async (input) => {
-                await update.mutateAsync(input);
+                const p = update.mutateAsync(input);
+                if (isOffline()) {
+                  p.catch(() => undefined);
+                  setEditing(false);
+                  return;
+                }
+                await p;
                 setEditing(false);
               }}
             />
@@ -136,6 +159,8 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
           </div>
         </div>
       )}
+
+      {!editing && <FinanceSection clientId={id} />}
 
       {!editing && <DocumentsSection clientId={id} />}
     </section>

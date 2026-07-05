@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/modal";
+import { Field, MobileList, TableScroll } from "@/components/ui/responsive-table";
 import { ApiError } from "@/lib/api";
 import { formatINR } from "@/lib/format";
 import { useMe } from "@/hooks/use-me";
@@ -48,15 +49,15 @@ export default function ServicesPage() {
           <ArrowLeft className="h-4 w-4" />
           Back to settings
         </Link>
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold">Services catalog</h1>
+            <h1 className="text-xl font-semibold sm:text-2xl">Services catalog</h1>
             <p className="text-sm text-muted-foreground">
               Reusable services with default fees and SAC codes — appears in the invoice form.
             </p>
           </div>
           {canManage && (
-            <Button onClick={() => setMode({ kind: "create" })}>
+            <Button className="w-full md:w-auto" onClick={() => setMode({ kind: "create" })}>
               <Plus className="h-4 w-4" />
               New service
             </Button>
@@ -83,27 +84,67 @@ export default function ServicesPage() {
           )}
         </Card>
       ) : (
-        <Card className="overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium">SAC code</th>
-                <th className="px-4 py-3 text-right font-medium">Default fee</th>
-                {canManage && <th className="w-24 px-4 py-3" />}
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((s) => (
-                <tr key={s.id} className="border-b last:border-b-0 hover:bg-muted/30">
-                  <td className="px-4 py-3 font-medium">{s.name}</td>
-                  <td className="px-4 py-3 font-mono text-xs">{s.sacCode ?? "—"}</td>
-                  <td className="px-4 py-3 text-right font-mono">{formatINR(s.defaultFee)}</td>
+        <>
+          {/* DESKTOP TABLE (md+) */}
+          <TableScroll>
+            <table className="w-full min-w-[640px] text-sm">
+              <thead className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
+                <tr>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Name</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">SAC code</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-right font-medium">
+                    Default fee
+                  </th>
+                  {canManage && <th className="w-24 px-4 py-3" />}
+                </tr>
+              </thead>
+              <tbody>
+                {data.map((s) => (
+                  <tr key={s.id} className="border-b last:border-b-0 hover:bg-muted/30">
+                    <td className="px-4 py-3 font-medium">{s.name}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{s.sacCode ?? "—"}</td>
+                    <td className="px-4 py-3 text-right font-mono">{formatINR(s.defaultFee)}</td>
+                    {canManage && (
+                      <td className="px-4 py-3 text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="tap-target"
+                          onClick={() => setMode({ kind: "edit", service: s })}
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="tap-target"
+                          onClick={() => handleDelete(s)}
+                          disabled={del.isPending}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableScroll>
+
+          {/* MOBILE CARDS (below md) */}
+          <MobileList>
+            {data.map((s) => (
+              <Card key={s.id} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 font-medium">{s.name}</div>
                   {canManage && (
-                    <td className="px-4 py-3 text-right">
+                    <div className="flex shrink-0 items-center gap-1">
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="tap-target"
                         onClick={() => setMode({ kind: "edit", service: s })}
                         title="Edit"
                       >
@@ -112,19 +153,28 @@ export default function ServicesPage() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="tap-target"
                         onClick={() => handleDelete(s)}
                         disabled={del.isPending}
                         title="Delete"
                       >
                         <Trash2 className="h-4 w-4 text-muted-foreground" />
                       </Button>
-                    </td>
+                    </div>
                   )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+                </div>
+                <div className="mt-3 space-y-1 border-t pt-3">
+                  <Field label="SAC code">
+                    <span className="font-mono text-xs">{s.sacCode ?? "—"}</span>
+                  </Field>
+                  <Field label="Default fee">
+                    <span className="font-mono">{formatINR(s.defaultFee)}</span>
+                  </Field>
+                </div>
+              </Card>
+            ))}
+          </MobileList>
+        </>
       )}
 
       <Modal
@@ -217,7 +267,7 @@ function ServiceForm({
           placeholder="e.g. Statutory audit"
         />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <Label>Default fee (₹)</Label>
           <Input
@@ -238,11 +288,17 @@ function ServiceForm({
         </div>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
-      <div className="flex items-center justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={busy}>
+      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:items-center sm:justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={busy}
+          className="w-full sm:w-auto"
+        >
           Cancel
         </Button>
-        <Button type="submit" disabled={busy}>
+        <Button type="submit" disabled={busy} className="w-full sm:w-auto">
           {busy ? "Saving…" : submitLabel}
         </Button>
       </div>

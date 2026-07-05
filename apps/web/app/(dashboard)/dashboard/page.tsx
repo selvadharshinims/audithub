@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDashboard } from "@/hooks/use-dashboard";
-import { formatDate, formatINR } from "@/lib/format";
+import { formatDate, formatINR, formatINRWhole } from "@/lib/format";
 import { ComplianceTypeBadge } from "../compliance/_components/type-badge";
 import { KpiCard } from "./_components/kpi-card";
 import { RevenueChart } from "./_components/revenue-chart";
@@ -41,7 +41,7 @@ export default function DashboardPage() {
   return (
     <section className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <h1 className="text-xl font-semibold sm:text-2xl">Dashboard</h1>
         <p className="text-sm text-muted-foreground">Practice overview · {fyLabel}</p>
       </header>
 
@@ -55,13 +55,13 @@ export default function DashboardPage() {
         />
         <KpiCard
           label="Outstanding dues"
-          value={formatINR(kpis.outstandingDues)}
+          value={formatINRWhole(kpis.outstandingDues)}
           icon={Wallet}
           tone="warning"
         />
         <KpiCard
           label={`Revenue ${fyLabel}`}
-          value={formatINR(kpis.revenueFY)}
+          value={formatINRWhole(kpis.revenueFY)}
           icon={IndianRupee}
           tone="success"
         />
@@ -111,20 +111,20 @@ export default function DashboardPage() {
               <ul className="divide-y">
                 {upcomingReminders.map((r) => (
                   <li key={r.id} className="flex items-center justify-between gap-3 py-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <div className="font-medium">{r.title ?? `${r.type} · ${r.client.name}`}</div>
-                        <div className="text-xs text-muted-foreground">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">{r.title ?? `${r.type} · ${r.client.name}`}</div>
+                        <div className="truncate text-xs text-muted-foreground">
                           <Link href={`/clients/${r.client.id}`} className="hover:underline">
                             {r.client.name}
                           </Link>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex shrink-0 items-center gap-2">
                       <ComplianceTypeBadge type={r.type} />
-                      <span className="text-xs text-muted-foreground">{formatDate(r.dueDate)}</span>
+                      <span className="whitespace-nowrap text-xs text-muted-foreground">{formatDate(r.dueDate)}</span>
                     </div>
                   </li>
                 ))}
@@ -144,7 +144,7 @@ export default function DashboardPage() {
               <ul className="divide-y">
                 {recentActivity.map((a) => (
                   <li key={a.id} className="flex items-start justify-between gap-3 py-2 text-sm">
-                    <div>
+                    <div className="min-w-0">
                       <div>
                         <span className="font-medium">{a.actor?.name ?? "System"}</span>{" "}
                         <span className="text-muted-foreground">{a.action}</span>{" "}

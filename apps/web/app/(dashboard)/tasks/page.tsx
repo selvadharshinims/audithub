@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { useCreateTask, useDeleteTask, useTasks, useUpdateTask } from "@/hooks/use-tasks";
+import { isOffline } from "@/lib/offline";
 import type { TaskRow } from "@/types/task";
 import { TaskCard } from "./_components/task-card";
 import { TaskForm } from "./_components/task-form";
@@ -39,30 +40,38 @@ export default function TasksPage() {
     return map;
   }, [data]);
 
-  async function handleDrop(status: TaskStatus) {
+  function handleDrop(status: TaskStatus) {
     if (!dragId) return;
     const task = data?.find((t) => t.id === dragId);
     setDragId(null);
     setHoverCol(null);
     if (!task || task.status === status) return;
-    await update.mutateAsync({ id: task.id, input: { status } });
+    // Optimistic (see useUpdateTask); don't await so an offline/paused write
+    // can't leave a dangling rejection, and surface real errors.
+    update.mutateAsync({ id: task.id, input: { status } }).catch((err) => {
+      if (!isOffline()) alert(err instanceof Error ? err.message : "Failed to move task");
+    });
   }
 
   async function handleDelete(id: string, title: string) {
     if (!confirm(`Delete task "${title}"?`)) return;
-    await del.mutateAsync(id);
+    try {
+      await del.mutateAsync(id);
+    } catch (err) {
+      if (!isOffline()) alert(err instanceof Error ? err.message : "Failed to delete task");
+    }
   }
 
   return (
     <section className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Tasks</h1>
+          <h1 className="text-xl font-semibold sm:text-2xl">Tasks</h1>
           <p className="text-sm text-muted-foreground">
             {data ? `${data.length} task${data.length === 1 ? "" : "s"}` : " "} · Drag to change status
           </p>
         </div>
-        <Button onClick={() => setDialogMode({ kind: "create" })}>
+        <Button onClick={() => setDialogMode({ kind: "create" })} className="w-full md:w-auto">
           <Plus className="h-4 w-4" />
           New task
         </Button>
@@ -80,7 +89,7 @@ export default function TasksPage() {
       {isLoading ? (
         <Card className="p-8 text-center text-sm text-muted-foreground">Loading tasks…</Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 lg:grid lg:grid-cols-4 lg:overflow-visible lg:pb-0">
           {COLUMNS.map((col) => {
             const items = columns[col.status];
             const isHover = hoverCol === col.status && dragId !== null;
@@ -100,7 +109,7 @@ export default function TasksPage() {
                   e.preventDefault();
                   handleDrop(col.status);
                 }}
-                className={`flex flex-col gap-3 rounded-lg border bg-muted/30 p-3 transition ${
+                className={`flex w-[80vw] shrink-0 snap-start flex-col gap-3 rounded-lg border bg-muted/30 p-3 transition sm:w-[60vw] md:w-[380px] lg:w-auto ${
                   isHover ? "border-primary bg-primary/5" : ""
                 }`}
               >
@@ -114,7 +123,7 @@ export default function TasksPage() {
                   <button
                     type="button"
                     onClick={() => setDialogMode({ kind: "create", status: col.status })}
-                    className="rounded p-1 text-muted-foreground hover:bg-background hover:text-foreground"
+                    className="tap-target inline-flex items-center justify-center rounded p-1 text-muted-foreground hover:bg-background hover:text-foreground"
                     aria-label={`Add to ${col.title}`}
                   >
                     <Plus className="h-4 w-4" />
@@ -157,7 +166,13 @@ export default function TasksPage() {
             initial={{ status: dialogMode.status ?? "todo" }}
             onCancel={() => setDialogMode({ kind: "closed" })}
             onSubmit={async (input) => {
-              await create.mutateAsync(input);
+              const p = create.mutateAsync(input);
+              if (isOffline()) {
+                p.catch(() => undefined);
+                setDialogMode({ kind: "closed" });
+                return;
+              }
+              await p;
               setDialogMode({ kind: "closed" });
             }}
           />
@@ -185,7 +200,13 @@ export default function TasksPage() {
             }}
             onCancel={() => setDialogMode({ kind: "closed" })}
             onSubmit={async (input) => {
-              await update.mutateAsync({ id: dialogMode.task.id, input });
+              const p = update.mutateAsync({ id: dialogMode.task.id, input });
+              if (isOffline()) {
+                p.catch(() => undefined);
+                setDialogMode({ kind: "closed" });
+                return;
+              }
+              await p;
               setDialogMode({ kind: "closed" });
             }}
           />

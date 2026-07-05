@@ -84,11 +84,11 @@ export function CreateUserForm({
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <div className="flex items-center justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={busy}>
+      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:items-center sm:justify-end">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={busy} className="w-full sm:w-auto">
           Cancel
         </Button>
-        <Button type="submit" disabled={busy}>
+        <Button type="submit" disabled={busy} className="w-full sm:w-auto">
           {busy ? "Creating…" : "Create user"}
         </Button>
       </div>
@@ -151,11 +151,11 @@ export function EditUserForm({
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <div className="flex items-center justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={busy}>
+      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:items-center sm:justify-end">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={busy} className="w-full sm:w-auto">
           Cancel
         </Button>
-        <Button type="submit" disabled={busy}>
+        <Button type="submit" disabled={busy} className="w-full sm:w-auto">
           {busy ? "Saving…" : "Save changes"}
         </Button>
       </div>

@@ -3,20 +3,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { DocumentType } from "@audithub/types";
 import type { DocumentRow } from "@/types/document";
-import { ApiError } from "@/lib/api";
-
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
-
-function authHeaders(): HeadersInit {
-  const token = typeof window !== "undefined" ? localStorage.getItem("audithub.access") : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+import { ApiError, authFetch } from "@/lib/api";
 
 async function jsonRequest<T>(path: string, init: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    ...init,
-    headers: { ...authHeaders(), ...init.headers },
-  });
+  // authFetch adds auth + silent-refresh; we don't set Content-Type here so
+  // FormData uploads keep their browser-generated multipart boundary.
+  const res = await authFetch(path, init);
   if (res.status === 204) return undefined as T;
   const body = await res.json().catch(() => null);
   if (!res.ok) {
@@ -76,9 +68,7 @@ export function useDeleteDocument(clientId: string) {
 }
 
 export async function downloadDocument(doc: DocumentRow): Promise<void> {
-  const res = await fetch(`${BASE}/documents/${doc.id}/download`, {
-    headers: authHeaders(),
-  });
+  const res = await authFetch(`/documents/${doc.id}/download`, { method: "GET" });
   if (!res.ok) throw new Error("Download failed");
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);

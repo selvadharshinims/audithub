@@ -66,7 +66,7 @@ export function NotificationsBell() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted"
+        className="tap-target relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted"
         aria-label="Notifications"
       >
         <Bell className="h-4 w-4" />

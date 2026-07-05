@@ -42,7 +42,7 @@ export function Calendar({ monthDate, reminders, onReminderClick, onDayClick }: 
     a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
   return (
-    <div className="overflow-hidden rounded-lg border bg-card">
+    <div className="min-w-[720px] overflow-hidden rounded-lg border bg-card">
       <div className="grid grid-cols-7 border-b bg-muted/40 text-center text-xs font-medium uppercase text-muted-foreground">
         {WEEKDAYS.map((w) => (
           <div key={w} className="px-2 py-2">

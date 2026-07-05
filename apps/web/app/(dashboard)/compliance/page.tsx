@@ -12,6 +12,7 @@ import {
   useSendReminderNow,
   useUpdateReminder,
 } from "@/hooks/use-reminders";
+import { Field, MobileList, TableScroll } from "@/components/ui/responsive-table";
 import { formatDate } from "@/lib/format";
 import type { ReminderRow } from "@/types/reminder";
 import { Calendar } from "./_components/calendar";
@@ -56,17 +57,17 @@ export default function CompliancePage() {
 
   return (
     <section className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Compliance</h1>
+          <h1 className="text-xl font-semibold sm:text-2xl">Compliance</h1>
           <p className="text-sm text-muted-foreground">Statutory deadlines &amp; auto reminders.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <div className="flex rounded-md border p-0.5">
             <button
               type="button"
               onClick={() => setView("calendar")}
-              className={`inline-flex items-center gap-1 rounded px-3 py-1 text-xs font-medium ${
+              className={`inline-flex flex-1 items-center justify-center gap-1 rounded px-3 py-1 text-xs font-medium ${
                 view === "calendar" ? "bg-muted" : "text-muted-foreground"
               }`}
             >
@@ -76,7 +77,7 @@ export default function CompliancePage() {
             <button
               type="button"
               onClick={() => setView("list")}
-              className={`inline-flex items-center gap-1 rounded px-3 py-1 text-xs font-medium ${
+              className={`inline-flex flex-1 items-center justify-center gap-1 rounded px-3 py-1 text-xs font-medium ${
                 view === "list" ? "bg-muted" : "text-muted-foreground"
               }`}
             >
@@ -84,7 +85,7 @@ export default function CompliancePage() {
               List
             </button>
           </div>
-          <Button onClick={() => setMode({ kind: "create" })}>
+          <Button onClick={() => setMode({ kind: "create" })} className="w-full sm:w-auto">
             <Plus className="h-4 w-4" />
             New reminder
           </Button>
@@ -94,11 +95,11 @@ export default function CompliancePage() {
       {view === "calendar" && (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => shiftMonth(-1)}>
+            <Button variant="outline" size="icon" className="tap-target" onClick={() => shiftMonth(-1)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <div className="min-w-[10rem] text-center text-sm font-medium">{monthLabel}</div>
-            <Button variant="outline" size="icon" onClick={() => shiftMonth(1)}>
+            <Button variant="outline" size="icon" className="tap-target" onClick={() => shiftMonth(1)}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -127,12 +128,14 @@ export default function CompliancePage() {
       {isLoading ? (
         <Card className="p-8 text-center text-sm text-muted-foreground">Loading…</Card>
       ) : view === "calendar" ? (
-        <Calendar
-          monthDate={monthDate}
-          reminders={data ?? []}
-          onReminderClick={(r) => setMode({ kind: "edit", reminder: r })}
-          onDayClick={(d) => setMode({ kind: "create", dueDate: d.toISOString().slice(0, 10) })}
-        />
+        <div className="overflow-x-auto">
+          <Calendar
+            monthDate={monthDate}
+            reminders={data ?? []}
+            onReminderClick={(r) => setMode({ kind: "edit", reminder: r })}
+            onDayClick={(d) => setMode({ kind: "create", dueDate: d.toISOString().slice(0, 10) })}
+          />
+        </div>
       ) : upcoming.length === 0 ? (
         <Card className="p-10 text-center">
           <p className="text-sm text-muted-foreground">No reminders in this range.</p>
@@ -142,40 +145,74 @@ export default function CompliancePage() {
           </Button>
         </Card>
       ) : (
-        <Card className="overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 font-medium">Due</th>
-                <th className="px-4 py-3 font-medium">Type</th>
-                <th className="px-4 py-3 font-medium">Client</th>
-                <th className="px-4 py-3 font-medium">Title</th>
-                <th className="px-4 py-3 font-medium">Offsets</th>
-                <th className="px-4 py-3 font-medium">Channel</th>
-                <th className="px-4 py-3 font-medium">Active</th>
-              </tr>
-            </thead>
-            <tbody>
-              {upcoming.map((r) => (
-                <tr
-                  key={r.id}
-                  onClick={() => setMode({ kind: "edit", reminder: r })}
-                  className="cursor-pointer border-b last:border-b-0 hover:bg-muted/30"
-                >
-                  <td className="px-4 py-3">{formatDate(r.dueDate)}</td>
-                  <td className="px-4 py-3">
-                    <ComplianceTypeBadge type={r.type} />
-                  </td>
-                  <td className="px-4 py-3">{r.client.name}</td>
-                  <td className="px-4 py-3">{r.title ?? "—"}</td>
-                  <td className="px-4 py-3 font-mono text-xs">{r.offsets.join(", ")}</td>
-                  <td className="px-4 py-3 capitalize">{r.channel}</td>
-                  <td className="px-4 py-3">{r.active ? "Yes" : "No"}</td>
+        <>
+          {/* DESKTOP TABLE (md+) */}
+          <TableScroll>
+            <table className="w-full min-w-[720px] text-sm">
+              <thead className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
+                <tr>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Due</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Type</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Client</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Title</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Offsets</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Channel</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Active</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+              </thead>
+              <tbody>
+                {upcoming.map((r) => (
+                  <tr
+                    key={r.id}
+                    onClick={() => setMode({ kind: "edit", reminder: r })}
+                    className="cursor-pointer border-b last:border-b-0 hover:bg-muted/30"
+                  >
+                    <td className="whitespace-nowrap px-4 py-3">{formatDate(r.dueDate)}</td>
+                    <td className="px-4 py-3">
+                      <ComplianceTypeBadge type={r.type} />
+                    </td>
+                    <td className="px-4 py-3">{r.client.name}</td>
+                    <td className="px-4 py-3">{r.title ?? "—"}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{r.offsets.join(", ")}</td>
+                    <td className="px-4 py-3 capitalize">{r.channel}</td>
+                    <td className="px-4 py-3">{r.active ? "Yes" : "No"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableScroll>
+
+          {/* MOBILE CARDS (below md) */}
+          <MobileList>
+            {upcoming.map((r) => (
+              <Card
+                key={r.id}
+                onClick={() => setMode({ kind: "edit", reminder: r })}
+                className="cursor-pointer p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{r.title ?? r.client.name}</div>
+                    <div className="truncate text-xs text-muted-foreground">{r.client.name}</div>
+                  </div>
+                  <div className="shrink-0">
+                    <ComplianceTypeBadge type={r.type} />
+                  </div>
+                </div>
+                <div className="mt-3 space-y-1 border-t pt-3">
+                  <Field label="Due">{formatDate(r.dueDate)}</Field>
+                  <Field label="Offsets">
+                    <span className="font-mono text-xs">{r.offsets.join(", ")}</span>
+                  </Field>
+                  <Field label="Channel">
+                    <span className="capitalize">{r.channel}</span>
+                  </Field>
+                  <Field label="Active">{r.active ? "Yes" : "No"}</Field>
+                </div>
+              </Card>
+            ))}
+          </MobileList>
+        </>
       )}
 
       <Modal

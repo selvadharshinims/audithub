@@ -6,13 +6,16 @@ import { Plus, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { TableScroll, MobileList, Field } from "@/components/ui/responsive-table";
 import { useClients, useDeleteClient } from "@/hooks/use-clients";
+import { isOffline } from "@/lib/offline";
 import { ClientStatusBadge } from "./_components/status-badge";
 
 export default function ClientsPage() {
   const { data, isLoading, isError, error, refetch } = useClients();
   const del = useDeleteClient();
   const [query, setQuery] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     if (!data) return [];
@@ -27,30 +30,37 @@ export default function ClientsPage() {
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
-    await del.mutateAsync(id);
+    setDeletingId(id);
+    try {
+      await del.mutateAsync(id);
+    } catch (err) {
+      if (!isOffline()) alert(err instanceof Error ? err.message : "Failed to delete client");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   return (
     <section className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Clients</h1>
+          <h1 className="text-xl font-semibold sm:text-2xl">Clients</h1>
           <p className="text-sm text-muted-foreground">
             {data ? `${data.length} client${data.length === 1 ? "" : "s"}` : " "}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:w-auto">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by name, PAN, GSTIN…"
-              className="w-72 pl-8"
+              className="w-full pl-8 md:w-72"
             />
           </div>
-          <Link href="/clients/new">
-            <Button>
+          <Link href="/clients/new" className="w-full md:w-auto">
+            <Button className="w-full md:w-auto">
               <Plus className="h-4 w-4" />
               New client
             </Button>
@@ -84,49 +94,93 @@ export default function ClientsPage() {
           )}
         </Card>
       ) : (
-        <Card className="overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium">PAN</th>
-                <th className="px-4 py-3 font-medium">GSTIN</th>
-                <th className="px-4 py-3 font-medium">Mobile</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="w-16 px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((c) => (
-                <tr key={c.id} className="border-b last:border-b-0 hover:bg-muted/30">
-                  <td className="px-4 py-3">
+        <>
+          {/* DESKTOP TABLE (md+) */}
+          <TableScroll>
+            <table className="w-full min-w-[720px] text-sm">
+              <thead className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
+                <tr>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Name</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">PAN</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">GSTIN</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Mobile</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">Status</th>
+                  <th className="w-16 px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((c) => (
+                  <tr key={c.id} className="border-b last:border-b-0 hover:bg-muted/30">
+                    <td className="px-4 py-3">
+                      <Link href={`/clients/${c.id}`} className="font-medium hover:underline">
+                        {c.name}
+                      </Link>
+                      {c.email && <div className="text-xs text-muted-foreground">{c.email}</div>}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs">{c.pan ?? "—"}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{c.gstin ?? "—"}</td>
+                    <td className="px-4 py-3">{c.mobile ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      <ClientStatusBadge status={c.status} />
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Delete"
+                        className="tap-target"
+                        onClick={() => handleDelete(c.id, c.name)}
+                        disabled={deletingId === c.id}
+                      >
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableScroll>
+
+          {/* MOBILE CARDS (below md) */}
+          <MobileList>
+            {filtered.map((c) => (
+              <Card key={c.id} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
                     <Link href={`/clients/${c.id}`} className="font-medium hover:underline">
                       {c.name}
                     </Link>
-                    {c.email && <div className="text-xs text-muted-foreground">{c.email}</div>}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs">{c.pan ?? "—"}</td>
-                  <td className="px-4 py-3 font-mono text-xs">{c.gstin ?? "—"}</td>
-                  <td className="px-4 py-3">{c.mobile ?? "—"}</td>
-                  <td className="px-4 py-3">
+                    {c.email && (
+                      <div className="truncate text-xs text-muted-foreground">{c.email}</div>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
                     <ClientStatusBadge status={c.status} />
-                  </td>
-                  <td className="px-4 py-3 text-right">
                     <Button
                       variant="ghost"
                       size="icon"
                       title="Delete"
+                      className="tap-target"
                       onClick={() => handleDelete(c.id, c.name)}
                       disabled={del.isPending}
                     >
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+                  </div>
+                </div>
+                <div className="mt-3 space-y-1 border-t pt-3">
+                  <Field label="PAN">
+                    <span className="font-mono text-xs">{c.pan ?? "—"}</span>
+                  </Field>
+                  <Field label="GSTIN">
+                    <span className="font-mono text-xs">{c.gstin ?? "—"}</span>
+                  </Field>
+                  <Field label="Mobile">{c.mobile ?? "—"}</Field>
+                </div>
+              </Card>
+            ))}
+          </MobileList>
+        </>
       )}
     </section>
   );

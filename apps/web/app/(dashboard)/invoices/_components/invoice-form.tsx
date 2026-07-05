@@ -27,12 +27,14 @@ type FormState = {
   notes: string;
 };
 
+const today = () => new Date().toISOString().slice(0, 10);
+
 const empty: FormState = {
   clientId: "",
   number: "",
   kind: "invoice",
   description: "",
-  issuedAt: new Date().toISOString().slice(0, 10),
+  issuedAt: "",
   dueDate: "",
   subtotal: "",
   cgstRate: "9",
@@ -52,20 +54,23 @@ export interface InvoiceFormProps {
 }
 
 export function InvoiceForm({ initial, submitLabel, onSubmit, onCancel, busy, lockClient }: InvoiceFormProps) {
-  const [values, setValues] = useState<FormState>({ ...empty, ...initial });
+  // `issuedAt` is computed at mount (not module-load) so a long-lived tab never
+  // defaults a new invoice to a stale/previous day.
+  const [values, setValues] = useState<FormState>(() => ({ ...empty, issuedAt: today(), ...initial }));
+  const [serviceChoice, setServiceChoice] = useState<string>(initial?.description ? "__other__" : "");
   const [error, setError] = useState<string | null>(null);
   const clients = useClients();
   const services = useServices();
 
-  function applyService(serviceId: string) {
-    if (!serviceId) return;
-    const svc = services.data?.find((s) => s.id === serviceId);
-    if (!svc) return;
-    setValues((v) => ({
-      ...v,
-      description: v.description || svc.name,
-      subtotal: v.subtotal || String(svc.defaultFee),
-    }));
+  function chooseService(choice: string) {
+    setServiceChoice(choice);
+    // Pick the service (name only) — never the amount. "Other" reveals a free-text box.
+    if (choice === "" || choice === "__other__") {
+      setValues((v) => ({ ...v, description: "" }));
+      return;
+    }
+    const svc = services.data?.find((s) => s.id === choice);
+    if (svc) setValues((v) => ({ ...v, description: svc.name }));
   }
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -91,6 +96,10 @@ export function InvoiceForm({ initial, submitLabel, onSubmit, onCancel, busy, lo
     }
     if (!values.number.trim()) {
       setError("Invoice number is required");
+      return;
+    }
+    if (!values.description.trim()) {
+      setError("Please choose a service");
       return;
     }
     if (totals.sub <= 0) {
@@ -126,7 +135,7 @@ export function InvoiceForm({ initial, submitLabel, onSubmit, onCancel, busy, lo
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1">
           <Label>
             Client<span className="ml-0.5 text-red-600">*</span>
@@ -190,36 +199,35 @@ export function InvoiceForm({ initial, submitLabel, onSubmit, onCancel, busy, lo
           <Input type="date" value={values.dueDate} onChange={(e) => set("dueDate", e.target.value)} />
         </div>
 
-        {services.data && services.data.length > 0 && (
-          <div className="space-y-1 md:col-span-2">
-            <Label>Pre-fill from service</Label>
-            <Select defaultValue="" onChange={(e) => applyService(e.target.value)}>
-              <option value="">Select a service…</option>
-              {services.data.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} — {formatINR(s.defaultFee)}
-                </option>
-              ))}
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Only fills empty description / subtotal — won&apos;t overwrite what you&apos;ve typed.
-            </p>
-          </div>
-        )}
-
-        <div className="space-y-1 md:col-span-2">
-          <Label>Description</Label>
-          <Input
-            value={values.description}
-            onChange={(e) => set("description", e.target.value)}
-            placeholder="e.g. Statutory audit for FY 2024-25"
-          />
+        <div className="space-y-1 sm:col-span-2">
+          <Label>
+            Service<span className="ml-0.5 text-red-600">*</span>
+          </Label>
+          <Select value={serviceChoice} onChange={(e) => chooseService(e.target.value)}>
+            <option value="">
+              {services.isLoading ? "Loading services…" : "Select a service…"}
+            </option>
+            {services.data?.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+            <option value="__other__">Other</option>
+          </Select>
+          {serviceChoice === "__other__" && (
+            <Input
+              value={values.description}
+              onChange={(e) => set("description", e.target.value)}
+              placeholder="Enter service or description"
+              className="mt-2"
+            />
+          )}
         </div>
       </section>
 
       <section className="space-y-3 rounded-lg border bg-muted/30 p-4">
         <h3 className="text-sm font-semibold">Amount &amp; GST</h3>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div className="space-y-1">
             <Label>
               Subtotal (₹)<span className="ml-0.5 text-red-600">*</span>
@@ -265,13 +273,13 @@ export function InvoiceForm({ initial, submitLabel, onSubmit, onCancel, busy, lo
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-6 gap-y-1 border-t pt-3 text-sm md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-1 border-t pt-3 text-sm sm:grid-cols-4">
           <Row label="CGST" value={formatINR(totals.cgst)} />
           <Row label="SGST" value={formatINR(totals.sgst)} />
           <Row label="IGST" value={formatINR(totals.igst)} />
           <Row label="Tax total" value={formatINR(totals.tax)} />
           <Row label="Subtotal" value={formatINR(totals.sub)} />
-          <div className="col-span-3 flex items-baseline justify-end gap-3">
+          <div className="col-span-2 flex items-baseline justify-end gap-3 sm:col-span-3">
             <span className="text-xs uppercase text-muted-foreground">Grand total</span>
             <span className="text-lg font-semibold">{formatINR(totals.total)}</span>
           </div>
@@ -285,15 +293,21 @@ export function InvoiceForm({ initial, submitLabel, onSubmit, onCancel, busy, lo
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <div className="flex items-center gap-2">
-        <Button type="submit" disabled={busy}>
-          {busy ? "Saving…" : submitLabel}
-        </Button>
+      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:items-center sm:justify-end">
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel} disabled={busy}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={busy}
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
         )}
+        <Button type="submit" disabled={busy} className="w-full sm:w-auto">
+          {busy ? "Saving…" : submitLabel}
+        </Button>
       </div>
     </form>
   );

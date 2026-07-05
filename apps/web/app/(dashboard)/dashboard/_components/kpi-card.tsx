@@ -50,7 +50,9 @@ export function KpiCard({
           <Icon className="h-4 w-4" />
         </div>
       </div>
-      <div className="relative mt-3 text-3xl font-semibold tracking-tight">{value}</div>
+      <div className="relative mt-3 break-words text-xl font-semibold leading-tight tracking-tight tabular-nums sm:text-2xl">
+        {value}
+      </div>
       {hint && <div className="relative mt-1 text-xs text-muted-foreground">{hint}</div>}
     </div>
   );
