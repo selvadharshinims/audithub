@@ -18,7 +18,10 @@ COPY packages/config/package.json packages/config/
 
 # --ignore-scripts: the manifests-only stage has no source yet, so skip the
 # types package's `prepare` build (we run it explicitly below once sources exist).
-RUN pnpm install --frozen-lockfile --ignore-scripts
+# --prod=false: FORCE devDependencies (typescript/tsc, etc.) to install even when
+# the host injects NODE_ENV=production at build time (e.g. Coolify) — the builder
+# needs them to compile; the runtime image is pruned separately via `pnpm deploy`.
+RUN pnpm install --frozen-lockfile --ignore-scripts --prod=false
 
 # Now copy the rest and build.
 COPY packages ./packages
