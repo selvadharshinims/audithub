@@ -128,3 +128,16 @@
     }
   }
 }
+
+/* iOS Safari auto-zooms (and the page visibly jumps) whenever a focused form
+   control has a font-size under 16px — our inputs are 14px (text-sm). Force
+   16px on small screens so focusing a field no longer zooms/shifts the page.
+   This rule is intentionally OUTSIDE @layer so it wins over the Tailwind
+   text-sm utility; desktop keeps the smaller size. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}

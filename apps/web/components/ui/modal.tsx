@@ -38,7 +38,7 @@ export function Modal({ open, onClose, title, description, children, className }
     >
       <div
         className={cn(
-          "relative max-h-[92vh] w-full overflow-y-auto rounded-t-xl border bg-card p-6 shadow-premium-lg animate-slide-up sm:max-h-[90vh] sm:max-w-lg sm:rounded-xl",
+          "relative max-h-[92dvh] w-full overflow-y-auto overscroll-contain rounded-t-xl border bg-card p-6 shadow-premium-lg animate-slide-up sm:max-h-[90vh] sm:max-w-lg sm:rounded-xl",
           className,
         )}
         onClick={(e) => e.stopPropagation()}
