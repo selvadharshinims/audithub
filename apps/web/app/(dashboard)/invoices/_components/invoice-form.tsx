@@ -58,6 +58,11 @@ export function InvoiceForm({ initial, submitLabel, onSubmit, onCancel, busy, lo
   // defaults a new invoice to a stale/previous day.
   const [values, setValues] = useState<FormState>(() => ({ ...empty, issuedAt: today(), ...initial }));
   const [serviceChoice, setServiceChoice] = useState<string>(initial?.description ? "__other__" : "");
+  // GST is hidden by default and only shown when the user asks for it. When
+  // editing an invoice that already carries GST, start expanded.
+  const [gstEnabled, setGstEnabled] = useState<boolean>(() =>
+    [initial?.cgstRate, initial?.sgstRate, initial?.igstRate].some((r) => Number(r) > 0),
+  );
   const [error, setError] = useState<string | null>(null);
   const clients = useClients();
   const services = useServices();
@@ -79,12 +84,15 @@ export function InvoiceForm({ initial, submitLabel, onSubmit, onCancel, busy, lo
 
   const totals = useMemo(() => {
     const sub = Number(values.subtotal) || 0;
+    if (!gstEnabled) {
+      return { sub, cgst: 0, sgst: 0, igst: 0, tax: 0, total: sub };
+    }
     const cgst = sub * ((Number(values.cgstRate) || 0) / 100);
     const sgst = sub * ((Number(values.sgstRate) || 0) / 100);
     const igst = sub * ((Number(values.igstRate) || 0) / 100);
     const tax = cgst + sgst + igst;
     return { sub, cgst, sgst, igst, tax, total: sub + tax };
-  }, [values.subtotal, values.cgstRate, values.sgstRate, values.igstRate]);
+  }, [gstEnabled, values.subtotal, values.cgstRate, values.sgstRate, values.igstRate]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -113,9 +121,11 @@ export function InvoiceForm({ initial, submitLabel, onSubmit, onCancel, busy, lo
       kind: values.kind,
       description: values.description.trim() || undefined,
       subtotal: totals.sub,
-      cgst: totals.cgst || undefined,
-      sgst: totals.sgst || undefined,
-      igst: totals.igst || undefined,
+      // Always explicit (incl. 0) so toggling GST off on an edit actually
+      // zeroes the stored amounts instead of leaving stale ones behind.
+      cgst: totals.cgst,
+      sgst: totals.sgst,
+      igst: totals.igst,
       tax: totals.tax,
       total: totals.total,
       status: values.status,
@@ -226,8 +236,20 @@ export function InvoiceForm({ initial, submitLabel, onSubmit, onCancel, busy, lo
       </section>
 
       <section className="space-y-3 rounded-lg border bg-muted/30 p-4">
-        <h3 className="text-sm font-semibold">Amount &amp; GST</h3>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold">Amount{gstEnabled ? " & GST" : ""}</h3>
+          <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-input accent-primary"
+              checked={gstEnabled}
+              onChange={(e) => setGstEnabled(e.target.checked)}
+            />
+            Apply GST
+          </label>
+        </div>
+
+        <div className={`grid grid-cols-2 gap-4 ${gstEnabled ? "sm:grid-cols-4" : ""}`}>
           <div className="space-y-1">
             <Label>
               Subtotal (₹)<span className="ml-0.5 text-red-600">*</span>
@@ -241,43 +263,51 @@ export function InvoiceForm({ initial, submitLabel, onSubmit, onCancel, busy, lo
               placeholder="0.00"
             />
           </div>
-          <div className="space-y-1">
-            <Label>CGST %</Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              value={values.cgstRate}
-              onChange={(e) => set("cgstRate", e.target.value)}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>SGST %</Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              value={values.sgstRate}
-              onChange={(e) => set("sgstRate", e.target.value)}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>IGST %</Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              value={values.igstRate}
-              onChange={(e) => set("igstRate", e.target.value)}
-            />
-          </div>
+          {gstEnabled && (
+            <>
+              <div className="space-y-1">
+                <Label>CGST %</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={values.cgstRate}
+                  onChange={(e) => set("cgstRate", e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>SGST %</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={values.sgstRate}
+                  onChange={(e) => set("sgstRate", e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>IGST %</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={values.igstRate}
+                  onChange={(e) => set("igstRate", e.target.value)}
+                />
+              </div>
+            </>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-x-6 gap-y-1 border-t pt-3 text-sm sm:grid-cols-4">
-          <Row label="CGST" value={formatINR(totals.cgst)} />
-          <Row label="SGST" value={formatINR(totals.sgst)} />
-          <Row label="IGST" value={formatINR(totals.igst)} />
-          <Row label="Tax total" value={formatINR(totals.tax)} />
+          {gstEnabled && (
+            <>
+              <Row label="CGST" value={formatINR(totals.cgst)} />
+              <Row label="SGST" value={formatINR(totals.sgst)} />
+              <Row label="IGST" value={formatINR(totals.igst)} />
+              <Row label="Tax total" value={formatINR(totals.tax)} />
+            </>
+          )}
           <Row label="Subtotal" value={formatINR(totals.sub)} />
           <div className="col-span-2 flex items-baseline justify-end gap-3 sm:col-span-3">
             <span className="text-xs uppercase text-muted-foreground">Grand total</span>

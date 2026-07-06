@@ -64,6 +64,7 @@ model Organization {
   name           String
   gstin          String?
   financialYear  String?
+  logo           String?  // firm logo as a base64 data URL (PNG/JPEG), shown in the header + invoice PDF
   plan           String   @default("free")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

@@ -15,6 +15,7 @@ export interface Organization {
   name: string;
   gstin: string | null;
   financialYear: string | null;
+  logo: string | null;
   plan: string;
   createdAt: string;
   updatedAt: string;

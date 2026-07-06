@@ -4,6 +4,7 @@ import { CommandPaletteTrigger } from "@/components/command-palette-trigger";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { OfflineIndicator } from "@/components/offline-indicator";
+import { OrgLogo } from "@/components/org-logo";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserChip } from "@/components/user-chip";
@@ -45,6 +46,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <NotificationsBell />
             <div className="mx-1 h-6 w-px bg-border" />
             <UserChip />
+            <OrgLogo />
           </div>
         </header>
 

@@ -208,6 +208,15 @@ export const OrgUpdateSchema = z.object({
   gstin: optionalTrimmed,
   financialYear: optionalTrimmed,
   plan: optionalTrimmed,
+  // Firm logo as a base64 PNG data URL (the browser converts uploads to PNG via
+  // canvas). `null` clears it. PNG-only + size-capped here; the API additionally
+  // decode-validates it so a corrupt image can never reach the PDF renderer.
+  logo: z
+    .string()
+    .regex(/^data:image\/png;base64,/, "Logo must be a PNG image")
+    .max(700_000, "Logo image is too large (max ~500KB)")
+    .nullable()
+    .optional(),
 });
 export type OrgUpdateInput = z.input<typeof OrgUpdateSchema>;
 

@@ -128,7 +128,7 @@ invoicesRouter.get("/:id/pdf", async (req, res, next) => {
 
     const org = await prisma.organization.findUniqueOrThrow({
       where: { id: req.auth!.orgId },
-      select: { name: true, gstin: true },
+      select: { name: true, gstin: true, logo: true },
     });
 
     res.setHeader("Content-Type", "application/pdf");
@@ -187,7 +187,7 @@ invoicesRouter.post("/:id/send", async (req, res, next) => {
 
     const org = await prisma.organization.findUniqueOrThrow({
       where: { id: req.auth!.orgId },
-      select: { name: true, gstin: true },
+      select: { name: true, gstin: true, logo: true },
     });
 
     const pdfBuffer = await renderInvoicePdfToBuffer({

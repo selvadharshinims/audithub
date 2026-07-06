@@ -475,8 +475,10 @@ export function FinanceSection({ clientId }: { clientId: string }) {
               return;
             }
             await p;
-            await refreshFinance();
+            // Close now; let the finance list refetch in the background so the
+            // modal doesn't sit on "Saving…" through the round-trip.
             close();
+            refreshFinance();
           }}
         />
       </Modal>
@@ -510,8 +512,10 @@ export function FinanceSection({ clientId }: { clientId: string }) {
               return;
             }
             await p;
-            await refreshFinance();
+            // Close now; let the finance list refetch in the background so the
+            // modal doesn't sit on "Saving…" through the round-trip.
             close();
+            refreshFinance();
           }}
         />
       </Modal>
@@ -547,8 +551,8 @@ export function FinanceSection({ clientId }: { clientId: string }) {
                 return;
               }
               await p;
-              await refreshFinance();
               close();
+              refreshFinance();
             }}
           />
         )}
@@ -611,8 +615,8 @@ function InvoiceEditModal({
               return;
             }
             await p;
-            await onSaved();
             onClose();
+            onSaved();
           }}
         />
       )}

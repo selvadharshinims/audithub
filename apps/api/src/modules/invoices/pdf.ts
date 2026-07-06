@@ -33,7 +33,20 @@ export interface InvoicePdfInput {
   org: {
     name: string;
     gstin: string | null;
+    logo?: string | null;
   };
+}
+
+/** Decode a `data:image/...;base64,...` URL to a Buffer, or null if unusable. */
+function decodeLogo(logo: string | null | undefined): Buffer | null {
+  if (!logo) return null;
+  const comma = logo.indexOf(",");
+  if (!logo.startsWith("data:image/") || comma === -1) return null;
+  try {
+    return Buffer.from(logo.slice(comma + 1), "base64");
+  } catch {
+    return null;
+  }
 }
 
 /** Kick off a PDF stream. Caller pipes it to the response. */
@@ -57,15 +70,31 @@ export function renderInvoicePdf(input: InvoicePdfInput): PDFKit.PDFDocument {
   const light = "#e5e7eb";
   const dark = "#111827";
 
-  // Header — firm block on the left, doc meta on the right
+  // Header — optional logo + firm block on the left, doc meta on the right.
+  // A bad/unsupported logo buffer must degrade to "no logo", never break the PDF.
+  let firmX = 48;
+  const logoBuf = decodeLogo(org.logo);
+  if (logoBuf) {
+    try {
+      doc.image(logoBuf, 48, 44, { fit: [46, 46] });
+      firmX = 106;
+    } catch {
+      firmX = 48;
+    }
+  }
+
   doc
     .fillColor(dark)
     .font("Helvetica-Bold")
     .fontSize(18)
-    .text(org.name, 48, 48, { width: 300 });
+    .text(org.name, firmX, 48, { width: 300 - (firmX - 48) });
 
   if (org.gstin) {
-    doc.font("Helvetica").fontSize(9).fillColor(grey).text(`GSTIN: ${org.gstin}`, { width: 300 });
+    doc
+      .font("Helvetica")
+      .fontSize(9)
+      .fillColor(grey)
+      .text(`GSTIN: ${org.gstin}`, firmX, doc.y, { width: 300 - (firmX - 48) });
   }
 
   doc

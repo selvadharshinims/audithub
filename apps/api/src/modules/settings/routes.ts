@@ -4,6 +4,8 @@ import { requireRole } from "../../middleware/rbac.js";
 import { prisma } from "../../lib/prisma.js";
 import { OrgUpdateSchema } from "@audithub/types";
 import { sendDigestForOrg } from "../../jobs/digests.js";
+import { assertValidPngDataUrl } from "../../lib/image-validate.js";
+import { HttpError } from "../../middleware/error.js";
 
 export const settingsRouter = Router();
 
@@ -21,6 +23,15 @@ settingsRouter.get("/", async (req, res, next) => {
 settingsRouter.patch("/", requireRole("super_admin"), async (req, res, next) => {
   try {
     const input = OrgUpdateSchema.parse(req.body);
+    // Decode-validate the logo before it can ever reach pdfkit (async PNG decode
+    // errors crash the process, so a bad image must never be stored).
+    if (typeof input.logo === "string") {
+      try {
+        assertValidPngDataUrl(input.logo);
+      } catch (e) {
+        throw new HttpError(400, e instanceof Error ? e.message : "Invalid logo image");
+      }
+    }
     const org = await prisma.organization.update({
       where: { id: req.auth!.orgId },
       data: input,
