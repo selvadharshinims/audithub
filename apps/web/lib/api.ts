@@ -87,7 +87,6 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
     // pages.
     if (
       res.status === 401 &&
-      token &&
       typeof window !== "undefined" &&
       !AUTH_PATH.test(window.location.pathname)
     ) {
