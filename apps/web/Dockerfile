@@ -39,6 +39,11 @@ RUN pnpm --filter @audithub/web build
 FROM node:20-alpine AS runtime
 WORKDIR /app
 
+# curl is needed by Coolify's in-container healthcheck (busybox wget resolves
+# localhost to IPv6 ::1, but Next standalone binds IPv4 0.0.0.0 only, so wget
+# gets "connection refused"; curl's happy-eyeballs falls back to 127.0.0.1).
+RUN apk add --no-cache curl
+
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
