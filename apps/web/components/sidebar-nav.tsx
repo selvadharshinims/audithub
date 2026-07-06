@@ -72,8 +72,18 @@ export function SidebarNav() {
 
   const sections = me?.isPlatformAdmin ? [...SECTIONS, PLATFORM_SECTION] : SECTIONS;
 
-  const isActive = (href: string) =>
-    href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
+  // A link is "matched" when the current path equals it or sits under it
+  // (with a `/` boundary so `/settings` doesn't match `/settings-x`).
+  const allHrefs = sections.flatMap((s) => s.items.map((i) => i.href));
+  const matches = (href: string) => pathname === href || pathname.startsWith(href + "/");
+
+  // Only the most specific matching link lights up — otherwise `/settings/services`
+  // would activate both Settings (`/settings`) and Services.
+  const activeHref = allHrefs
+    .filter(matches)
+    .reduce<string | null>((best, href) => (best && best.length >= href.length ? best : href), null);
+
+  const isActive = (href: string) => href === activeHref;
 
   return (
     <nav className="flex flex-col gap-6 px-3 py-4">

@@ -25,15 +25,17 @@ export function AuthHero() {
       <div className="relative flex h-full flex-col justify-between p-10 text-white">
         {/* logo */}
         <div className="flex items-center gap-3">
-          <Image src="/audithub-logo.png" alt="AuditHub" width={132} height={132} className="h-16 w-16 rounded-xl" priority />
-          <div className="leading-none">
-            <div className="text-xl font-bold tracking-tight">
-              <span className="text-[#5b8bff]">Audit</span>
-              <span className="text-[#ff5a63]">Hub</span>
-            </div>
-            <div className="mt-1 text-[11px] font-medium uppercase tracking-[0.22em] text-white/55">
-              Practice OS
-            </div>
+          <Image
+            src="/audithub-mark.png"
+            alt="AuditHub"
+            width={128}
+            height={128}
+            className="h-14 w-14 rounded-xl bg-[#05070e] object-contain p-2 ring-1 ring-white/10"
+            priority
+          />
+          <div className="font-brand text-2xl font-bold tracking-tight leading-none">
+            <span className="text-[#5b8bff]">Audit</span>
+            <span className="text-[#ff5a63]">Hub</span>
           </div>
         </div>
 

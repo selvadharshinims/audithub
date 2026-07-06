@@ -1,10 +1,21 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import type { ComplianceType } from "@audithub/types";
 import type { ReminderRow } from "@/types/reminder";
 import { ComplianceTypeBadge } from "./type-badge";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+// Solid dot colours mirroring the type badge — used for the compact mobile grid
+// where reminder titles won't fit in a ~48px column.
+const DOT: Record<ComplianceType, string> = {
+  GST: "bg-blue-500",
+  ITR: "bg-purple-500",
+  TDS: "bg-amber-500",
+  ROC: "bg-emerald-500",
+  LICENSE: "bg-rose-500",
+};
 
 export interface CalendarProps {
   monthDate: Date;
@@ -42,11 +53,13 @@ export function Calendar({ monthDate, reminders, onReminderClick, onDayClick }: 
     a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
   return (
-    <div className="min-w-[720px] overflow-hidden rounded-lg border bg-card">
-      <div className="grid grid-cols-7 border-b bg-muted/40 text-center text-xs font-medium uppercase text-muted-foreground">
+    // Full width on phones (no horizontal scroll); roomy fixed grid on sm+.
+    <div className="min-w-full overflow-hidden rounded-lg border bg-card text-xs sm:min-w-[720px]">
+      <div className="grid grid-cols-7 border-b bg-muted/40 text-center text-[10px] font-medium uppercase text-muted-foreground sm:text-xs">
         {WEEKDAYS.map((w) => (
-          <div key={w} className="px-2 py-2">
-            {w}
+          <div key={w} className="px-1 py-2 sm:px-2">
+            <span className="sm:hidden">{w[0]}</span>
+            <span className="hidden sm:inline">{w}</span>
           </div>
         ))}
       </div>
@@ -59,7 +72,7 @@ export function Calendar({ monthDate, reminders, onReminderClick, onDayClick }: 
               key={i}
               onClick={() => cell.date && onDayClick(cell.date)}
               className={cn(
-                "min-h-[110px] border-b border-r p-1.5 text-xs last:border-r-0",
+                "min-h-[62px] border-b border-r p-1 last:border-r-0 sm:min-h-[110px] sm:p-1.5",
                 cell.day ? "cursor-pointer hover:bg-muted/40" : "bg-muted/10",
                 i % 7 === 6 && "border-r-0",
               )}
@@ -68,13 +81,33 @@ export function Calendar({ monthDate, reminders, onReminderClick, onDayClick }: 
                 <>
                   <div
                     className={cn(
-                      "mb-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs",
+                      "mb-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] sm:h-6 sm:w-6 sm:text-xs",
                       isToday ? "bg-primary font-semibold text-primary-foreground" : "text-foreground",
                     )}
                   >
                     {cell.day}
                   </div>
-                  <div className="space-y-1">
+
+                  {/* MOBILE: coloured dots (titles won't fit) */}
+                  {items.length > 0 && (
+                    <div className="flex flex-wrap gap-1 sm:hidden">
+                      {items.slice(0, 4).map((r) => (
+                        <span
+                          key={r.id}
+                          className={cn("h-1.5 w-1.5 rounded-full", DOT[r.type])}
+                          aria-label={r.title ?? r.client.name}
+                        />
+                      ))}
+                      {items.length > 4 && (
+                        <span className="text-[9px] leading-none text-muted-foreground">
+                          +{items.length - 4}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* DESKTOP: full reminder rows */}
+                  <div className="hidden space-y-1 sm:block">
                     {items.slice(0, 3).map((r) => (
                       <button
                         key={r.id}

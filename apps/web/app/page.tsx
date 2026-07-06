@@ -98,7 +98,7 @@ export default function Home() {
       </section>
 
       <footer className="relative z-10 mx-auto max-w-6xl border-t px-4 py-6 text-center text-xs text-muted-foreground sm:px-6">
-        AuditHub · Practice OS · v1.0
+        AuditHub · v1.0
       </footer>
     </main>
   );
