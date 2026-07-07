@@ -5,10 +5,44 @@ import { InvoiceCreateSchema, InvoiceUpdateSchema } from "@audithub/types";
 import { HttpError } from "../../middleware/error.js";
 import { renderInvoicePdf, renderInvoicePdfToBuffer } from "./pdf.js";
 import { mailer } from "../../lib/mailer.js";
+import { makeInvoiceShareToken, verifyInvoiceShareToken } from "./share.js";
 
 export const invoicesRouter = Router();
 
 invoicesRouter.use(requireAuth);
+
+// Map a fetched invoice row to the PDF renderer's invoice input.
+function toPdfInvoice(inv: {
+  number: string;
+  kind: string;
+  description: string | null;
+  subtotal: unknown;
+  cgst: unknown;
+  sgst: unknown;
+  igst: unknown;
+  tax: unknown;
+  total: unknown;
+  status: string;
+  issuedAt: Date;
+  dueDate: Date | null;
+  notes: string | null;
+}) {
+  return {
+    number: inv.number,
+    kind: inv.kind,
+    description: inv.description,
+    subtotal: Number(inv.subtotal),
+    cgst: inv.cgst ? Number(inv.cgst) : null,
+    sgst: inv.sgst ? Number(inv.sgst) : null,
+    igst: inv.igst ? Number(inv.igst) : null,
+    tax: Number(inv.tax),
+    total: Number(inv.total),
+    status: inv.status,
+    issuedAt: inv.issuedAt,
+    dueDate: inv.dueDate,
+    notes: inv.notes,
+  };
+}
 
 invoicesRouter.get("/", async (req, res, next) => {
   try {
@@ -62,7 +96,17 @@ invoicesRouter.get("/:id", async (req, res, next) => {
     const invoice = await prisma.invoice.findFirst({
       where: { id: req.params.id, client: { orgId: req.auth!.orgId } },
       include: {
-        client: { select: { id: true, name: true, gstin: true, pan: true, address: true } },
+        client: {
+          select: {
+            id: true,
+            name: true,
+            gstin: true,
+            pan: true,
+            address: true,
+            email: true,
+            mobile: true,
+          },
+        },
         payments: true,
       },
     });
@@ -102,6 +146,21 @@ invoicesRouter.delete("/:id", async (req, res, next) => {
     if (!existing) throw new HttpError(404, "Invoice not found");
     await prisma.invoice.delete({ where: { id: existing.id } });
     res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Issue a public capability token so the client can be sent a link to the PDF
+// (WhatsApp / email). Org-scoped: only invoices in the caller's org.
+invoicesRouter.get("/:id/share", async (req, res, next) => {
+  try {
+    const invoice = await prisma.invoice.findFirst({
+      where: { id: req.params.id, client: { orgId: req.auth!.orgId } },
+      select: { id: true },
+    });
+    if (!invoice) throw new HttpError(404, "Invoice not found");
+    res.json({ token: makeInvoiceShareToken(invoice.id) });
   } catch (err) {
     next(err);
   }
@@ -273,3 +332,53 @@ function escapeHtml(s: string): string {
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string),
   );
 }
+
+// ─── Public invoice PDF (no auth — the signed token IS the capability) ───────
+// Mounted at /invoices/public so a shared WhatsApp/email link resolves to the
+// same rendered PDF (watermark + logo). Served inline so it previews in-browser.
+export const invoicePublicRouter = Router();
+
+invoicePublicRouter.get("/:token", async (req, res, next) => {
+  try {
+    const invoiceId = verifyInvoiceShareToken(req.params.token);
+    if (!invoiceId) throw new HttpError(404, "Invalid or expired link");
+
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: invoiceId },
+      include: {
+        client: {
+          select: {
+            name: true,
+            gstin: true,
+            pan: true,
+            address: true,
+            email: true,
+            mobile: true,
+            orgId: true,
+          },
+        },
+      },
+    });
+    if (!invoice) throw new HttpError(404, "Invoice not found");
+
+    const org = await prisma.organization.findUniqueOrThrow({
+      where: { id: invoice.client.orgId },
+      select: { name: true, gstin: true, logo: true },
+    });
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${encodeURIComponent(invoice.number)}.pdf"`,
+    );
+
+    const doc = renderInvoicePdf({
+      org,
+      client: invoice.client,
+      invoice: toPdfInvoice(invoice),
+    });
+    doc.pipe(res);
+  } catch (err) {
+    next(err);
+  }
+});

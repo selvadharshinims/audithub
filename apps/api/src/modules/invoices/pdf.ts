@@ -1,4 +1,7 @@
 import PDFDocument from "pdfkit";
+import { CA_WATERMARK_PNG_BASE64 } from "./watermark-data.js";
+
+const WATERMARK_BUFFER = Buffer.from(CA_WATERMARK_PNG_BASE64, "base64");
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -69,6 +72,24 @@ export function renderInvoicePdf(input: InvoicePdfInput): PDFKit.PDFDocument {
   const grey = "#666";
   const light = "#e5e7eb";
   const dark = "#111827";
+
+  // Faint CA-emblem watermark, centred behind all content. Drawn first so the
+  // invoice text renders on top. Isolated in save()/restore() so the low opacity
+  // never leaks into the rest of the document; guarded so a bad asset can never
+  // break the PDF (page 1 only — long invoices flowing to page 2 won't repeat).
+  try {
+    const wmW = 300;
+    const wmH = wmW * (WATERMARK_BUFFER.length ? 199 / 300 : 1); // asset aspect ~300x199
+    const pageW = doc.page.width;
+    const pageH = doc.page.height;
+    doc.save();
+    doc.opacity(0.06);
+    doc.image(WATERMARK_BUFFER, (pageW - wmW) / 2, (pageH - wmH) / 2, { width: wmW });
+    doc.opacity(1);
+    doc.restore();
+  } catch {
+    // no watermark rather than a broken invoice
+  }
 
   // Header — optional logo + firm block on the left, doc meta on the right.
   // A bad/unsupported logo buffer must degrade to "no logo", never break the PDF.

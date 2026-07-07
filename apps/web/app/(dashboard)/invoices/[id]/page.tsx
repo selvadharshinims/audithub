@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Download, Mail, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, Mail, MessageCircle, Plus, Trash2 } from "lucide-react";
 import { PAYMENT_STATUS, type PaymentStatus } from "@audithub/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,13 +13,18 @@ import {
   downloadInvoicePdf,
   useDeleteInvoice,
   useInvoice,
-  useSendInvoice,
   useUpdateInvoice,
 } from "@/hooks/use-invoices";
-import { ApiError } from "@/lib/api";
+import { useOrg } from "@/hooks/use-settings";
 import { useCreatePayment } from "@/hooks/use-payments";
 import { formatDate, formatINR } from "@/lib/format";
 import { isOffline } from "@/lib/offline";
+import {
+  buildInvoiceMessage,
+  emailSubject,
+  fetchInvoiceShareLink,
+  toWhatsappNumber,
+} from "@/lib/share";
 import { PaymentStatusBadge } from "../_components/status-badge";
 import { PaymentForm } from "../../payments/_components/payment-form";
 
@@ -30,8 +35,9 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
   const update = useUpdateInvoice(id);
   const del = useDeleteInvoice();
   const createPayment = useCreatePayment();
-  const sendInvoice = useSendInvoice(id);
+  const { data: org } = useOrg();
   const [recording, setRecording] = useState(false);
+  const [sharing, setSharing] = useState<null | "whatsapp" | "email">(null);
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
@@ -59,6 +65,48 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
       alert(err instanceof Error ? err.message : "Failed to delete invoice");
     }
   }
+
+  // Open WhatsApp / the mail client pre-filled with a message containing a
+  // secure public link to this invoice's PDF (fetched on demand).
+  async function share(channel: "whatsapp" | "email") {
+    if (!data) return;
+    if (channel === "whatsapp" && !toWhatsappNumber(data.client.mobile)) {
+      alert("This client has no valid mobile number on file.");
+      return;
+    }
+    if (channel === "email" && !data.client.email) {
+      alert("This client has no email on file.");
+      return;
+    }
+    setSharing(channel);
+    try {
+      const link = await fetchInvoiceShareLink(data.id);
+      const firm = org?.name ?? "our firm";
+      const shareInv = {
+        number: data.number,
+        kind: data.kind,
+        total: data.total,
+        dueDate: data.dueDate,
+        clientName: data.client.name,
+      };
+      const message = buildInvoiceMessage(shareInv, firm, link);
+      if (channel === "whatsapp") {
+        const num = toWhatsappNumber(data.client.mobile);
+        window.open(`https://wa.me/${num}?text=${encodeURIComponent(message)}`, "_blank");
+      } else {
+        const to = encodeURIComponent(data.client.email ?? "");
+        const subject = encodeURIComponent(emailSubject(shareInv, firm));
+        window.location.href = `mailto:${to}?subject=${subject}&body=${encodeURIComponent(message)}`;
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not prepare the invoice link.");
+    } finally {
+      setSharing(null);
+    }
+  }
+
+  const hasWhatsapp = Boolean(toWhatsappNumber(data.client.mobile));
+  const hasEmail = Boolean(data.client.email);
 
   return (
     <section className="space-y-6">
@@ -120,21 +168,22 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
             </Button>
             <Button
               variant="outline"
-              disabled={sendInvoice.isPending}
-              onClick={async () => {
-                const to = prompt("Send invoice PDF to:", data.client.email ?? "");
-                if (to === null) return;
-                try {
-                  const res = await sendInvoice.mutateAsync(to.trim() || undefined);
-                  alert(`Invoice emailed to ${res.to}. (Check the API server logs for the stub delivery.)`);
-                } catch (err) {
-                  const msg = err instanceof ApiError ? err.message : err instanceof Error ? err.message : "Send failed";
-                  alert(msg);
-                }
-              }}
+              disabled={!hasWhatsapp || sharing !== null}
+              title={hasWhatsapp ? "Send via WhatsApp" : "No mobile number on file"}
+              onClick={() => share("whatsapp")}
+              className="text-[#25D366]"
+            >
+              <MessageCircle className="h-4 w-4" />
+              {sharing === "whatsapp" ? "Opening…" : "WhatsApp"}
+            </Button>
+            <Button
+              variant="outline"
+              disabled={!hasEmail || sharing !== null}
+              title={hasEmail ? "Send via email" : "No email on file"}
+              onClick={() => share("email")}
             >
               <Mail className="h-4 w-4" />
-              {sendInvoice.isPending ? "Sending…" : "Email"}
+              {sharing === "email" ? "Opening…" : "Email"}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={del.isPending}>
               <Trash2 className="h-4 w-4" />
